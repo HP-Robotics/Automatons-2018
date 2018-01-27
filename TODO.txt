@@ -1,0 +1,5 @@
+1. Camera
+2. Redo auto
+3. Update Big Mac
+4. Sync
+5. Drivetrain - 4 motors intake + 4 drive + 2 solenoids + 1 motor + elevator motor + 2 encoders = 12 motors + 2 encoders
