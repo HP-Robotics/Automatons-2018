@@ -30,69 +30,48 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends IterativeRobot {
 
-	public class Button {
-		private boolean h = false; // stands for 'held', true if the Button is being actively held down
-		private boolean s = false; // stands for 'state', true if the Button is pressed
-		private boolean ls = false; // stands for 'last state', stores the previous state of the Button
-		private boolean c = false; // stands for 'changed', true if the Button's previous state does not match its
-		// current state
-
-		// check if the Button is pressed
-		public boolean on() {
-			return s;
-		}
-
-		// check if the Button is held down
-		public boolean held() {
-			return h;
-		}
-
-		// check if the Button has changed
-		public boolean changed() {
-			return c;
-		}
-
-		// update the Button, should be called periodically
-		public void update(boolean b) {
-
-			if (b && (b != ls)) {
-				s = !s;
-				c = true;
-
-			} else {
-				c = false;
-			}
-
-			h = b;
-			ls = b;
-		}
-
-		// reset all values
-		public void reset() {
-			s = false;
-			ls = false;
-			c = false;
-		}
-
-	}
-
-
 	Joystick joystick;
+	
+	final int xButton = 1;
+	final int aButton = 2;
+	final int bButton = 3;
+	final int yButton = 4;
+	final int leftBumper = 5;
+	final int rightBumper = 6;
+	final int leftTrigger = 7;
+	final int rightTrigger = 8;
+	
+	Button intakeOpenButton;
+	Button intakeCubeButton; 
+	Button intakeStowButton;
+	Button dropCubeButton;
+	Button gearHighButton;
+	Button gearLowButton;
+	
+	Button testButton;
 
-	Button buttonA;
-	Button buttonB;
-	Button buttonX;
-
-	TalonSRX motor0;
-	TalonSRX motor1;
-	TalonSRX motor2;
-	TalonSRX motor3;
+	TalonSRX leftMotor1;
+	TalonSRX leftMotor2;
+	TalonSRX rightMotor3;
+	TalonSRX rightMotor4;
+	
+	TalonSRX leftElbow;
+	TalonSRX rightElbow;
+	TalonSRX leftBelt;
+	TalonSRX rightBelt;
+	
+	TalonSRX fourbarMotor;
+	TalonSRX elevatorMotor;
 
 	DoubleSolenoid solenoid1;
 	Compressor compressor;
 	
-	Encoder leftEncoder;
-	Encoder rightEncoder;
+	Encoder lDriveEncoder;
+	Encoder rDriveEncoder;
+	Encoder lIntakeEncoder;
+	Encoder rIntakeEncoder;
+	Encoder fourbarEncoder;
+	Encoder elevatorEncoder;
 	
 	
 	//SnazzyPIDController leftControl;
@@ -141,27 +120,44 @@ public class Robot extends IterativeRobot {
 	        **/
 		joystick = new Joystick(0);
 
-		buttonA = new Button();
-		buttonB = new Button();
-		buttonX = new Button();
+		intakeOpenButton = new Button();
+		intakeCubeButton = new Button();
+		intakeStowButton = new Button();
+		dropCubeButton = new Button();
+		gearHighButton = new Button();
+		gearLowButton = new Button();
 		
-		motor0 = new TalonSRX(11);
-		motor1 = new TalonSRX(12);
-		motor2 = new TalonSRX(13);
-		motor3 = new TalonSRX(21);
-
-
-		motor0.configOpenloopRamp(motorRampRate, 500);
-		motor1.configOpenloopRamp(motorRampRate, 500);
+		testButton = new Button();
 		
-		motor2.configOpenloopRamp(motorRampRate, 500);
-		motor3.configOpenloopRamp(motorRampRate, 500);
+		leftMotor1 = new TalonSRX(1);
+		leftMotor2 = new TalonSRX(2);
+		rightMotor3 = new TalonSRX(3);
+		rightMotor4 = new TalonSRX(4);
 		
+		leftElbow = new TalonSRX(5);
+		rightElbow = new TalonSRX(6);
+		leftBelt = new TalonSRX(7);
+		rightBelt = new TalonSRX(8);
 		
-		leftEncoder = new Encoder(2, 3, false, Encoder.EncodingType.k4X);
-		leftEncoder.setDistancePerPulse(1);
-		rightEncoder = new Encoder(0, 1, true, Encoder.EncodingType.k4X);
-		rightEncoder.setDistancePerPulse(1);
+		fourbarMotor = new TalonSRX(9);
+		elevatorMotor = new TalonSRX(10);
+		
+		leftMotor1.configOpenloopRamp(motorRampRate, 500);
+		leftMotor2.configOpenloopRamp(motorRampRate, 500);
+		
+		rightMotor3.configOpenloopRamp(motorRampRate, 500);
+		rightMotor4.configOpenloopRamp(motorRampRate, 500);
+			
+		lDriveEncoder = new Encoder(2, 3, false, Encoder.EncodingType.k4X);
+		lDriveEncoder.setDistancePerPulse(1);
+		rDriveEncoder = new Encoder(0, 1, true, Encoder.EncodingType.k4X);
+		rDriveEncoder.setDistancePerPulse(1);
+		
+		lIntakeEncoder = new Encoder(4, 5, false, Encoder.EncodingType.k4X);
+		rIntakeEncoder = new Encoder(6, 7, false, Encoder.EncodingType.k4X);
+		
+		fourbarEncoder = new Encoder(8,9, false, Encoder.EncodingType.k4X);
+		elevatorEncoder = new Encoder( 10, 11, false, Encoder.EncodingType.k4X);
 
 		//leftEncoder.setSamplesToAverage(20);
 		//rightEncoder.setSamplesToAverage(20);
@@ -171,20 +167,21 @@ public class Robot extends IterativeRobot {
 
 		solenoid1.set(lowGear);
 
- 
-		leftEncoder.reset();
-		rightEncoder.reset();
+		lDriveEncoder.reset();
+		rDriveEncoder.reset();
+		lIntakeEncoder.reset();
+		rIntakeEncoder.reset();
+		fourbarEncoder.reset();
+		elevatorEncoder.reset();
 		
 		lDriveOutput = new LeftDrivePIDOutput(this);
 		rDriveOutput = new RightDrivePIDOutput(this);
 		
-		
-		leftControl = new SnazzyMotionPlanner(0.04, 0.001, 0.8, 0, 0.0017, 0.002,  leftEncoder, lDriveOutput, 0.05, "Left.csv");
-		rightControl= new SnazzyMotionPlanner(0.04, 0.001, 0.8, 0, 0.0017, 0.002,  rightEncoder, rDriveOutput, 0.05,"Right.csv");
+		leftControl = new SnazzyMotionPlanner(0.04, 0.001, 0.8, 0, 0.0017, 0.002,  lDriveEncoder, lDriveOutput, 0.05, "Left.csv");
+		rightControl= new SnazzyMotionPlanner(0.04, 0.001, 0.8, 0, 0.0017, 0.002,  rDriveEncoder, rDriveOutput, 0.05,"Right.csv");
 		
 		//leftControl = new SnazzyPIDController(0.04, 0.001, 0.8, 0, leftEncoder, lDriveOutput, 0.05, "Left.csv");
 		//rightControl= new SnazzyPIDController(0.04, 0.001, 0.8, 0, rightEncoder, rDriveOutput, 0.05,"Right.csv");
-	
 		
 		SmartDashboard.putNumber("P", 0.01);
 		SmartDashboard.putNumber("I", 0.0);
@@ -192,6 +189,8 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Setpoint", 0);
 		SmartDashboard.putNumber("L Encoder", 0);
 		SmartDashboard.putNumber("R Encoder", 0);
+		SmartDashboard.putNumber("L Elbow", 0);
+		SmartDashboard.putNumber("R Elbow", 0);
 	}
 
 	/**
@@ -209,8 +208,12 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void autonomousInit() {
 		
-		leftEncoder.reset();
-		rightEncoder.reset();
+		lDriveEncoder.reset();
+		rDriveEncoder.reset();
+		lIntakeEncoder.reset();
+		rIntakeEncoder.reset();
+		fourbarEncoder.reset();
+		elevatorEncoder.reset();
 		
 		leftControl.reset();
 		rightControl.reset();
@@ -224,7 +227,6 @@ public class Robot extends IterativeRobot {
 		}
 		solenoid1.set(lowGear);
 		
-		
 		((Autonomous) autonomousChooser.getSelected()).init();
 		
 		
@@ -237,8 +239,8 @@ public class Robot extends IterativeRobot {
 	public void autonomousPeriodic() {
 		((Autonomous) autonomousChooser.getSelected()).periodic();
 		
-		SmartDashboard.putNumber("L Encoder", leftEncoder.get());
-		SmartDashboard.putNumber("R Encoder", rightEncoder.get());
+		SmartDashboard.putNumber("L Encoder", lDriveEncoder.get());
+		SmartDashboard.putNumber("R Encoder", rDriveEncoder.get());
 	}
 
 	/**
@@ -246,20 +248,22 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void teleopPeriodic() {
+		
+		gearLowButton.update(joystick.getRawButton(leftTrigger));
+		gearHighButton.update(joystick.getRawButton(leftBumper));
+		intakeOpenButton.update(joystick.getRawButton(rightBumper));
+		intakeCubeButton.update(joystick.getRawButton(rightTrigger));
+		intakeStowButton.update(joystick.getRawButton(xButton));
+		dropCubeButton.update(joystick.getRawButton(bButton));
 
-	
-		buttonA.update(joystick.getRawButton(2));
-		buttonB.update(joystick.getRawButton(3));
-
-
-		if (buttonA.changed()) {
+		if (gearLowButton.changed()) {
 			solenoid1.set(lowGear);
 			System.out.println("low");
 			//leftEncoder.setDistancePerPulse(lowGearDistancePerPulse);
 			//rightEncoder.setDistancePerPulse(lowGearDistancePerPulse);
 
 		}
-		if (buttonB.changed()) {
+		if (gearHighButton.changed()) {
 			solenoid1.set(highGear);
 			System.out.println("high");
 			//leftEncoder.setDistancePerPulse(highGearDistancePerPulse);
@@ -268,14 +272,16 @@ public class Robot extends IterativeRobot {
 			
 		}
 		
-		SmartDashboard.putNumber("L Encoder", leftEncoder.get());
-		SmartDashboard.putNumber("R Encoder", rightEncoder.get());
+		SmartDashboard.putNumber("L Encoder", lDriveEncoder.get());
+		SmartDashboard.putNumber("R Encoder", rDriveEncoder.get());
+		SmartDashboard.putNumber("L Elbow", rDriveEncoder.get());
+		SmartDashboard.putNumber("R Elbow", rDriveEncoder.get());
 		//System.out.println(lowGearDistancePerPulse);
 		
-		motor0.set(ControlMode.Velocity, Math.pow(joystick.getRawAxis(1), 1) * maxMotorPower);
-		motor1.set(ControlMode.Velocity, Math.pow(joystick.getRawAxis(1), 1) * maxMotorPower);
-		motor2.set(ControlMode.Velocity, -Math.pow(joystick.getRawAxis(1), 1) * maxMotorPower);
-		motor3.set(ControlMode.Velocity, -Math.pow(joystick.getRawAxis(1), 1) * maxMotorPower);
+		leftMotor1.set(ControlMode.Velocity, Math.pow(joystick.getRawAxis(1), 1) * maxMotorPower);
+		leftMotor2.set(ControlMode.Velocity, Math.pow(joystick.getRawAxis(1), 1) * maxMotorPower);
+		rightMotor3.set(ControlMode.Velocity, -Math.pow(joystick.getRawAxis(1), 1) * maxMotorPower);
+		rightMotor4.set(ControlMode.Velocity, -Math.pow(joystick.getRawAxis(1), 1) * maxMotorPower);
 		
 		
 		//This thing maybe
@@ -296,16 +302,16 @@ public class Robot extends IterativeRobot {
 
 	@Override
 	public void testPeriodic() {
-		buttonX.update(joystick.getRawButton(1));
+		testButton.update(joystick.getRawButton(1));
 		
 		
 		leftControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		rightControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		
-		if(buttonX.on()){
-			if(buttonX.changed()) {
-				leftEncoder.reset();
-				rightEncoder.reset();
+		if(testButton.on()){
+			if(testButton.changed()) {
+				lDriveEncoder.reset();
+				rDriveEncoder.reset();
 				
 				//leftControl.configureGoal(SmartDashboard.getNumber("Setpoint", 0), 300, 300);
 				//rightControl.configureGoal(SmartDashboard.getNumber("Setpoint", 0), 300, 300);
@@ -320,15 +326,15 @@ public class Robot extends IterativeRobot {
 				rightControl.enable();  
 			}
 			
-		}else if (buttonX.changed()&& !buttonX.on()){
+		}else if (testButton.changed()&& !testButton.on()){
 			leftControl.disable();
 			rightControl.disable();
 			
 			//leftControl.stopCalibration();
 			//rightControl.startCalibration();
 		}
-		SmartDashboard.putNumber("L Encoder", leftEncoder.get());
-		SmartDashboard.putNumber("R Encoder", rightEncoder.get());
+		SmartDashboard.putNumber("L Encoder", lDriveEncoder.get());
+		SmartDashboard.putNumber("R Encoder", rDriveEncoder.get());
 	}
 	public void disabledInit() {
 		//System.out.println("disabled");

@@ -15,8 +15,8 @@ public class RightDrivePIDOutput implements PIDOutput {
 	@Override
 	public void pidWrite(double output) {
 		
-		r.motor0.set(ControlMode.Velocity, -output);
-		r.motor1.set(ControlMode.Velocity, -output);
+		r.leftMotor1.set(ControlMode.Velocity, -output);
+		r.leftMotor2.set(ControlMode.Velocity, -output);
 		
 	}
 

@@ -34,8 +34,8 @@ public class Autonomous {
 	
 	public void start() {
 		//robot.gyro.reset();
-		robot.leftEncoder.reset();
-		robot.rightEncoder.reset();
+		robot.lDriveEncoder.reset();
+		robot.rDriveEncoder.reset();
 		
 		robot.leftControl.reset();
 		robot.rightControl.reset();
@@ -58,10 +58,10 @@ public class Autonomous {
 	
 	public boolean checkStageTimeout() {
 		if (stage < 0 || stage >= stageData.length) {
-			robot.motor0.set(ControlMode.Velocity, 0.0);
-			robot.motor1.set(ControlMode.Velocity, 0.0);
-			robot.motor2.set(ControlMode.Velocity, 0.0);
-			robot.motor3.set(ControlMode.Velocity, 0.0);
+			robot.leftMotor1.set(ControlMode.Velocity, 0.0);
+			robot.leftMotor2.set(ControlMode.Velocity, 0.0);
+			robot.rightMotor3.set(ControlMode.Velocity, 0.0);
+			robot.rightMotor4.set(ControlMode.Velocity, 0.0);
 			return true;
 		}
 	
