@@ -11,5 +11,9 @@
 	<classpathentry kind="lib" path="C:/Users/Robotics/wpilib/user/java/lib/CTRE_Phoenix-sources.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Robotics/wpilib/user/java/lib/navx_frc.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Robotics/wpilib/user/java/lib/Pathfinder-Java.jar"/>
+	<classpathentry kind="var" path="USERLIBS_DIR/CTRE_Phoenix-sources.jar"/>
+	<classpathentry kind="var" path="USERLIBS_DIR/CTRE_Phoenix.jar"/>
+	<classpathentry kind="var" path="USERLIBS_DIR/navx_frc.jar"/>
+	<classpathentry kind="var" path="USERLIBS_DIR/Pathfinder-Java.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

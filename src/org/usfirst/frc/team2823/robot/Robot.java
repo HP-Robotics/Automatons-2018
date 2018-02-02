@@ -134,6 +134,11 @@ public class Robot extends IterativeRobot {
 		rightMotor3 = new TalonSRX(3);
 		rightMotor4 = new TalonSRX(4);
 		
+		leftMotor1.configOpenloopRamp(0, 0);
+		leftMotor2.configOpenloopRamp(0, 0);
+		rightMotor3.configOpenloopRamp(0, 0);
+		rightMotor4.configOpenloopRamp(0, 0);
+		
 		leftElbow = new TalonSRX(5);
 		rightElbow = new TalonSRX(6);
 		leftBelt = new TalonSRX(7);
@@ -141,12 +146,6 @@ public class Robot extends IterativeRobot {
 		
 		fourbarMotor = new TalonSRX(9);
 		elevatorMotor = new TalonSRX(10);
-		
-		leftMotor1.configOpenloopRamp(motorRampRate, 500);
-		leftMotor2.configOpenloopRamp(motorRampRate, 500);
-		
-		rightMotor3.configOpenloopRamp(motorRampRate, 500);
-		rightMotor4.configOpenloopRamp(motorRampRate, 500);
 			
 		lDriveEncoder = new Encoder(2, 3, false, Encoder.EncodingType.k4X);
 		lDriveEncoder.setDistancePerPulse(1);
@@ -278,10 +277,10 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("R Elbow", rDriveEncoder.get());
 		//System.out.println(lowGearDistancePerPulse);
 		
-		leftMotor1.set(ControlMode.Velocity, Math.pow(joystick.getRawAxis(1), 1) * maxMotorPower);
-		leftMotor2.set(ControlMode.Velocity, Math.pow(joystick.getRawAxis(1), 1) * maxMotorPower);
-		rightMotor3.set(ControlMode.Velocity, -Math.pow(joystick.getRawAxis(1), 1) * maxMotorPower);
-		rightMotor4.set(ControlMode.Velocity, -Math.pow(joystick.getRawAxis(1), 1) * maxMotorPower);
+		leftMotor1.set(ControlMode.PercentOutput, Math.pow(joystick.getRawAxis(1), 1) );
+		leftMotor2.set(ControlMode.PercentOutput, Math.pow(joystick.getRawAxis(1), 1) );
+		rightMotor3.set(ControlMode.PercentOutput, -Math.pow(joystick.getRawAxis(3), 1));
+		rightMotor4.set(ControlMode.PercentOutput, -Math.pow(joystick.getRawAxis(3), 1));
 		
 		
 		//This thing maybe
