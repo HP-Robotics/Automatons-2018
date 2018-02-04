@@ -1,5 +1,7 @@
 package org.usfirst.frc.team2823.robot;
 
+import java.io.File;
+
 import jaci.pathfinder.Pathfinder;
 import jaci.pathfinder.Trajectory;
 import jaci.pathfinder.Waypoint;
@@ -9,16 +11,19 @@ public class TrajectoryPlanner {
 	static SnazzyLog log = new SnazzyLog();
 	private static Trajectory m_left;
 	private static Trajectory m_right;
+	static File rightFile;
+	static File leftFile;
 	
     public static void generate() {
-        Trajectory.Config config = new Trajectory.Config(Trajectory.FitMethod.HERMITE_CUBIC, Trajectory.Config.SAMPLES_HIGH, 0.05, 300, 300, 600);
+        Trajectory.Config config = new Trajectory.Config(Trajectory.FitMethod.HERMITE_CUBIC, Trajectory.Config.SAMPLES_HIGH, 0.005, 90, 3000, 6000);
         Waypoint[] points = new Waypoint[] {
                 //new Waypoint(-4, -1, Pathfinder.d2r(-45)),
                 new Waypoint(0,0,0),
                 //new Waypoint(240, 48, Pathfinder.d2r(30)),
                 new Waypoint(60,20,0)
         };
-
+        
+        
         Trajectory trajectory = Pathfinder.generate(points, config);
 
         // Wheelbase Width = 0.5m
@@ -27,6 +32,7 @@ public class TrajectoryPlanner {
         // Do something with the new Trajectories...
         m_left = modifier.getLeftTrajectory();
         m_right = modifier.getRightTrajectory();
+
         
         for (int i = 0; i < trajectory.length(); i++) {
             Trajectory.Segment seg = trajectory.get(i);

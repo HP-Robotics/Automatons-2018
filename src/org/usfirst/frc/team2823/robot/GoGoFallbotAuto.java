@@ -8,7 +8,7 @@ public class GoGoFallbotAuto extends Autonomous {
 	
 	@Override
 	public void init() {
-		BlueprintStep[] blueprints = new BlueprintStep[] {new BlueprintStep(7.0, this::stageStart, this::stagePeriodic)};
+		BlueprintStep[] blueprints = new BlueprintStep[] {new BlueprintStep(15.0, this::stageStart, this::stagePeriodic)};
 		setBlueprints(blueprints);
 		
 		start();

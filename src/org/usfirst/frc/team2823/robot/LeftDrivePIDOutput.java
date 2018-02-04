@@ -14,8 +14,8 @@ public class LeftDrivePIDOutput implements PIDOutput {
 	@Override
 	public void pidWrite(double output) {
 		// TODO Auto-generated method stub
-		r.rightMotor3.set(ControlMode.Velocity, output);
-		r.rightMotor4.set(ControlMode.Velocity, output);
+		r.leftMotor1.set(ControlMode.PercentOutput, -output);
+		r.leftMotor2.set(ControlMode.PercentOutput, -output);
 		
 	}
 

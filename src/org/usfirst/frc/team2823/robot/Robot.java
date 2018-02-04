@@ -73,9 +73,12 @@ public class Robot extends IterativeRobot {
 	Encoder fourbarEncoder;
 	Encoder elevatorEncoder;
 	
+	DriveInchesPIDSource leftInches;
+	DriveInchesPIDSource rightInches;
 	
-	//SnazzyPIDController leftControl;
-	//SnazzyPIDController rightControl;
+	
+	SnazzyPIDController leftPIDControl;
+	SnazzyPIDController rightPIDControl;
 	
 	SnazzyMotionPlanner leftControl;
 	SnazzyMotionPlanner rightControl;
@@ -102,6 +105,9 @@ public class Robot extends IterativeRobot {
 	double lowGearDistancePerRev = (wheelDiameter * Math.PI) / 30.9375; // 30.9375 775 turns per wheel rev
 	double highGearDistancePerPulse = (highGearDistancePerRev / 12)*((15+5/8)/4); // 12 pulses per rev
 	double lowGearDistancePerPulse = (lowGearDistancePerRev / 12)*((15+5/8)/4); // 12 pulses per rev; ((15-5/8)/4) multiplier  because Owen probably did his math wrong
+	
+	final static double ENC_TO_INCH = 0.01;
+	final static double INCH_TO_ENC = 100;
 	/**
 	 * This function is run when the robot is first started up and should be used
 	 * for any initialization code.
@@ -147,13 +153,16 @@ public class Robot extends IterativeRobot {
 		fourbarMotor = new TalonSRX(9);
 		elevatorMotor = new TalonSRX(10);
 			
-		lDriveEncoder = new Encoder(2, 3, false, Encoder.EncodingType.k4X);
+		lDriveEncoder = new Encoder(0, 1, false, Encoder.EncodingType.k4X);
 		lDriveEncoder.setDistancePerPulse(1);
-		rDriveEncoder = new Encoder(0, 1, true, Encoder.EncodingType.k4X);
+		rDriveEncoder = new Encoder(2, 3, true, Encoder.EncodingType.k4X);
 		rDriveEncoder.setDistancePerPulse(1);
 		
 		lIntakeEncoder = new Encoder(4, 5, false, Encoder.EncodingType.k4X);
 		rIntakeEncoder = new Encoder(6, 7, false, Encoder.EncodingType.k4X);
+		
+		leftInches = new DriveInchesPIDSource(lDriveEncoder);
+		rightInches = new DriveInchesPIDSource(rDriveEncoder);
 		
 		fourbarEncoder = new Encoder(8,9, false, Encoder.EncodingType.k4X);
 		elevatorEncoder = new Encoder( 10, 11, false, Encoder.EncodingType.k4X);
@@ -172,15 +181,15 @@ public class Robot extends IterativeRobot {
 		rIntakeEncoder.reset();
 		fourbarEncoder.reset();
 		elevatorEncoder.reset();
-		
+	
 		lDriveOutput = new LeftDrivePIDOutput(this);
 		rDriveOutput = new RightDrivePIDOutput(this);
 		
-		leftControl = new SnazzyMotionPlanner(0.04, 0.001, 0.8, 0, 0.0017, 0.002,  lDriveEncoder, lDriveOutput, 0.05, "Left.csv");
-		rightControl= new SnazzyMotionPlanner(0.04, 0.001, 0.8, 0, 0.0017, 0.002,  rDriveEncoder, rDriveOutput, 0.05,"Right.csv");
+		leftControl = new SnazzyMotionPlanner(0.1, 0.001, 0.3, 0, 0.00143, 0.0102,  leftInches, lDriveOutput, 0.005, "Left.csv");
+		rightControl= new SnazzyMotionPlanner(0.1, 0.001, 0.3, 0, 0.00143, 0.0102,  rightInches, rDriveOutput, 0.005,"Right.csv");
 		
-		//leftControl = new SnazzyPIDController(0.04, 0.001, 0.8, 0, leftEncoder, lDriveOutput, 0.05, "Left.csv");
-		//rightControl= new SnazzyPIDController(0.04, 0.001, 0.8, 0, rightEncoder, rDriveOutput, 0.05,"Right.csv");
+		leftPIDControl = new SnazzyPIDController(0.04, 0.001, 0.8, 0, leftInches, lDriveOutput, 0.005, "Left.csv");
+		rightPIDControl= new SnazzyPIDController(0.04, 0.001, 0.8, 0, rightInches, rDriveOutput, 0.005,"Right.csv");
 		
 		SmartDashboard.putNumber("P", 0.01);
 		SmartDashboard.putNumber("I", 0.0);
@@ -254,6 +263,7 @@ public class Robot extends IterativeRobot {
 		intakeCubeButton.update(joystick.getRawButton(rightTrigger));
 		intakeStowButton.update(joystick.getRawButton(xButton));
 		dropCubeButton.update(joystick.getRawButton(bButton));
+		testButton.update(joystick.getRawButton(1));
 
 		if (gearLowButton.changed()) {
 			solenoid1.set(lowGear);
@@ -271,8 +281,8 @@ public class Robot extends IterativeRobot {
 			
 		}
 		
-		SmartDashboard.putNumber("L Encoder", lDriveEncoder.get());
-		SmartDashboard.putNumber("R Encoder", rDriveEncoder.get());
+		SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
+		SmartDashboard.putNumber("R Encoder", rightInches.pidGet());
 		SmartDashboard.putNumber("L Elbow", rDriveEncoder.get());
 		SmartDashboard.putNumber("R Elbow", rDriveEncoder.get());
 		//System.out.println(lowGearDistancePerPulse);
@@ -282,6 +292,33 @@ public class Robot extends IterativeRobot {
 		rightMotor3.set(ControlMode.PercentOutput, -Math.pow(joystick.getRawAxis(3), 1));
 		rightMotor4.set(ControlMode.PercentOutput, -Math.pow(joystick.getRawAxis(3), 1));
 		
+		/*leftPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		rightPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		
+		if(testButton.on()){
+			if(testButton.changed()) {
+				lDriveEncoder.reset();
+				rDriveEncoder.reset();
+				
+				//leftControl.configureGoal(SmartDashboard.getNumber("Setpoint", 0), 300, 300);
+				//rightControl.configureGoal(SmartDashboard.getNumber("Setpoint", 0), 300, 300);
+				
+				//leftControl.enable();
+				//rightControl.enable();
+				
+				leftPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
+				leftPIDControl.enable();
+				
+				rightPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
+				rightPIDControl.enable();
+
+			}
+			
+		}else if (testButton.changed()&& !testButton.on()){
+			leftPIDControl.disable();
+			rightPIDControl.disable();
+			
+		}*/
 		
 		//This thing maybe
 		//motorx.set(joystick.getRawAxis(3) > maxSpeed ? joystick.getRawAxis(3) : 0.8)
@@ -321,19 +358,19 @@ public class Robot extends IterativeRobot {
 				leftControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 				leftControl.enable();
 				
-				rightControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
-				rightControl.enable();  
+				//rightControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
+				//rightControl.enable();
+
 			}
 			
 		}else if (testButton.changed()&& !testButton.on()){
 			leftControl.disable();
-			rightControl.disable();
+			//rightControl.disable();
 			
-			//leftControl.stopCalibration();
-			//rightControl.startCalibration();
+			
 		}
-		SmartDashboard.putNumber("L Encoder", lDriveEncoder.get());
-		SmartDashboard.putNumber("R Encoder", rDriveEncoder.get());
+		SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
+		SmartDashboard.putNumber("R Encoder", rightInches.pidGet());
 	}
 	public void disabledInit() {
 		//System.out.println("disabled");
