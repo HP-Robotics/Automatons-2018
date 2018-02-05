@@ -30,7 +30,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends IterativeRobot {
 
-	Joystick joystick;
+	Joystick driveStick;
+	Joystick operatorStick;
 	
 	final int xButton = 1;
 	final int aButton = 2;
@@ -88,6 +89,8 @@ public class Robot extends IterativeRobot {
 	
 	TrajectoryPlanner traj;
 	
+	double[][] plan = {{0,0,0},{60, 20, 0}};
+	
 	SendableChooser<Autonomous> autonomousChooser;
 	
 	double maxMotorPower = .8; // maximum motor power output for 775's - owen said 0.8, but trying 
@@ -124,7 +127,8 @@ public class Robot extends IterativeRobot {
 	        c.setResolution(320, 180);
 	        c.setFPS(29);
 	        **/
-		joystick = new Joystick(0);
+		driveStick = new Joystick(0);
+		operatorStick = new Joystick(1);
 
 		intakeOpenButton = new Button();
 		intakeCubeButton = new Button();
@@ -150,7 +154,7 @@ public class Robot extends IterativeRobot {
 		leftBelt = new TalonSRX(7);
 		rightBelt = new TalonSRX(8);
 		
-		fourbarMotor = new TalonSRX(9);
+		fourbarMotor = new TalonSRX(31);
 		elevatorMotor = new TalonSRX(10);
 			
 		lDriveEncoder = new Encoder(0, 1, false, Encoder.EncodingType.k4X);
@@ -184,6 +188,9 @@ public class Robot extends IterativeRobot {
 	
 		lDriveOutput = new LeftDrivePIDOutput(this);
 		rDriveOutput = new RightDrivePIDOutput(this);
+		
+		traj = new TrajectoryPlanner(plan, 90, 3000, 6000);
+		traj.generate();
 		
 		leftControl = new SnazzyMotionPlanner(0.1, 0.001, 0.3, 0, 0.00143, 0.0102,  leftInches, lDriveOutput, 0.005, "Left.csv");
 		rightControl= new SnazzyMotionPlanner(0.1, 0.001, 0.3, 0, 0.00143, 0.0102,  rightInches, rDriveOutput, 0.005,"Right.csv");
@@ -257,13 +264,13 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void teleopPeriodic() {
 		
-		gearLowButton.update(joystick.getRawButton(leftTrigger));
-		gearHighButton.update(joystick.getRawButton(leftBumper));
-		intakeOpenButton.update(joystick.getRawButton(rightBumper));
-		intakeCubeButton.update(joystick.getRawButton(rightTrigger));
-		intakeStowButton.update(joystick.getRawButton(xButton));
-		dropCubeButton.update(joystick.getRawButton(bButton));
-		testButton.update(joystick.getRawButton(1));
+		gearLowButton.update(driveStick.getRawButton(leftTrigger));
+		gearHighButton.update(driveStick.getRawButton(leftBumper));
+		intakeOpenButton.update(driveStick.getRawButton(rightBumper));
+		intakeCubeButton.update(driveStick.getRawButton(rightTrigger));
+		intakeStowButton.update(driveStick.getRawButton(xButton));
+		dropCubeButton.update(driveStick.getRawButton(bButton));
+		testButton.update(driveStick.getRawButton(1));
 
 		if (gearLowButton.changed()) {
 			solenoid1.set(lowGear);
@@ -287,10 +294,12 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("R Elbow", rDriveEncoder.get());
 		//System.out.println(lowGearDistancePerPulse);
 		
-		leftMotor1.set(ControlMode.PercentOutput, Math.pow(joystick.getRawAxis(1), 1) );
-		leftMotor2.set(ControlMode.PercentOutput, Math.pow(joystick.getRawAxis(1), 1) );
-		rightMotor3.set(ControlMode.PercentOutput, -Math.pow(joystick.getRawAxis(3), 1));
-		rightMotor4.set(ControlMode.PercentOutput, -Math.pow(joystick.getRawAxis(3), 1));
+		leftMotor1.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 1) );
+		leftMotor2.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 1) );
+		rightMotor3.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 1));
+		rightMotor4.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 1));
+		
+		fourbarMotor.set(ControlMode.PercentOutput, operatorStick.getRawAxis(3));
 		
 		/*leftPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		rightPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
@@ -338,7 +347,7 @@ public class Robot extends IterativeRobot {
 
 	@Override
 	public void testPeriodic() {
-		testButton.update(joystick.getRawButton(1));
+		testButton.update(driveStick.getRawButton(1));
 		
 		
 		leftControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));

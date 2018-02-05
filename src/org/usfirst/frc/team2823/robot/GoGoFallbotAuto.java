@@ -17,8 +17,6 @@ public class GoGoFallbotAuto extends Autonomous {
 	//drive across the baseline
 	
 	public int stageStart() {
-		robot.traj = new TrajectoryPlanner();
-		robot.traj.generate();
 		
 		robot.leftControl.configureTrajectory(robot.traj.getLeftTrajectory(), false);
 		robot.rightControl.configureTrajectory(robot.traj.getRightTrajectory(), false);
