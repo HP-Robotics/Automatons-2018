@@ -81,6 +81,9 @@ public class Robot extends IterativeRobot {
 	SnazzyPIDController leftPIDControl;
 	SnazzyPIDController rightPIDControl;
 	
+	SnazzyPIDController fourbarControl;
+	FourbarOutput fourbarOutput;
+	
 	SnazzyMotionPlanner leftControl;
 	SnazzyMotionPlanner rightControl;
 	
@@ -155,6 +158,7 @@ public class Robot extends IterativeRobot {
 		rightBelt = new TalonSRX(8);
 		
 		fourbarMotor = new TalonSRX(31);
+		fourbarOutput = new FourbarOutput();
 		elevatorMotor = new TalonSRX(10);
 			
 		lDriveEncoder = new Encoder(0, 1, false, Encoder.EncodingType.k4X);
@@ -197,6 +201,8 @@ public class Robot extends IterativeRobot {
 		
 		leftPIDControl = new SnazzyPIDController(0.04, 0.001, 0.8, 0, leftInches, lDriveOutput, 0.005, "Left.csv");
 		rightPIDControl= new SnazzyPIDController(0.04, 0.001, 0.8, 0, rightInches, rDriveOutput, 0.005,"Right.csv");
+		
+		fourbarControl = new SnazzyPIDController(0.1, 0.0, 0.0, 0.0, fourbarEncoder, fourbarOutput, 0.005, "Fourbar.csv");
 		
 		SmartDashboard.putNumber("P", 0.01);
 		SmartDashboard.putNumber("I", 0.0);
@@ -299,7 +305,7 @@ public class Robot extends IterativeRobot {
 		rightMotor3.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 1));
 		rightMotor4.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 1));
 		
-		fourbarMotor.set(ControlMode.PercentOutput, operatorStick.getRawAxis(3));
+		fourbarMotor.set(ControlMode.PercentOutput, operatorStick.getRawAxis(3)*.4);
 		
 		/*leftPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		rightPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));

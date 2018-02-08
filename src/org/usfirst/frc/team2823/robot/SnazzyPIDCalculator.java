@@ -9,8 +9,6 @@ package org.usfirst.frc.team2823.robot;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.TimerTask;
-
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.wpilibj.HLUsageReporting;
 import edu.wpi.first.wpilibj.PIDInterface;
@@ -253,10 +251,12 @@ public class SnazzyPIDCalculator implements PIDInterface, LiveWindowSendable {
 
     if (enabled) {
       double input;
+      double timestamp;
       double result;
       final PIDOutput pidOutput;
       synchronized (this) {
         input = pidInput.pidGet();
+        timestamp = Timer.getFPGATimestamp();
       }
       synchronized (this) {
         m_error = getContinuousError(m_setpoint - input);
@@ -317,7 +317,7 @@ public class SnazzyPIDCalculator implements PIDInterface, LiveWindowSendable {
 
       
 
-	  m_log.write(Timer.getFPGATimestamp() + ", " + input + ", " + m_error + ", " + m_totalError + 
+	  m_log.write(timestamp + ", " + input + ", " + m_error + ", " + m_totalError + 
 				  ", " + m_result + ", " + pterm + ", " + iterm + ", " + dterm + ", " + fterm + ", " + m_setpoint + "\n");
     }
   }

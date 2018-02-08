@@ -165,13 +165,15 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 		m_trajectory = t;
 	}
 	public void runCalibration() {
+		double currentDist;
+		double currentCal;
 		m_calLog.open("Calibration" + m_file, "Timestamp, Distance, Velocity" + "\n");
 		synchronized(this) {
-			System.out.println("BOOM runCalibration");
 			m_pidOutput.pidWrite(1.0);
+			currentCal = Timer.getFPGATimestamp();
+			currentDist = m_pidInput.pidGet();
 		}
-		double currentCal = Timer.getFPGATimestamp();
-		double currentDist = m_pidInput.pidGet();
+		
 		double currentV = (currentDist-m_lastDist)/(currentCal-m_lastCal);
 		m_calLog.write(currentCal-m_calStart + ", " + currentDist + ", " + currentV + "\n");
 		if(currentV <= (m_lastV*1.01)) {
