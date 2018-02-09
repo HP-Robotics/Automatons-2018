@@ -20,6 +20,7 @@ public class TrajectoryPlanner {
 	private double m_maxA;
 	private double m_maxV;
 	private double m_maxJ;
+	private double wheelbase = 25.125;
 	
 	public TrajectoryPlanner(double[][] ap, double max_v, double max_a, double max_j) {
 		arrayPoints = ap;
@@ -32,7 +33,7 @@ public class TrajectoryPlanner {
     public void generate() {
     	Trajectory.Config config = new Trajectory.Config(Trajectory.FitMethod.HERMITE_CUBIC, Trajectory.Config.SAMPLES_HIGH, 0.005, m_maxV, m_maxA, m_maxJ);
     	Waypoint[] points = new Waypoint[arrayPoints.length] ;
-    	// new Waypoint(-4, -1, Pathfinder.d2r(-45)),
+
     	for (int i=0; i<arrayPoints.length;i++) {
     		points[i]=new Waypoint(arrayPoints[i][0], arrayPoints[i][1],arrayPoints[i][2]);
     	}
@@ -45,15 +46,11 @@ public class TrajectoryPlanner {
     		Pathfinder.writeToCSV(myFile, m_trajectory);
     	}
 
-        // Wheelbase Width = 0.5m
-        TankModifier modifier = new TankModifier(m_trajectory).modify(35);
+        TankModifier modifier = new TankModifier(m_trajectory).modify(wheelbase);
         // Do something with the new Trajectories...
         m_left = modifier.getLeftTrajectory();
         m_right = modifier.getRightTrajectory();
         
-        
-        //File myFile = new File("/home/lvuser/myfile.csv");
-        //Pathfinder.writeToCSV(myFile, trajectory);
         
         for (int i = 0; i < m_trajectory.length(); i++) {
             Trajectory.Segment seg = m_trajectory.get(i);

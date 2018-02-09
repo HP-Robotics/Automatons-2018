@@ -13,7 +13,4 @@ public class BlueprintStep {
 		m_periodic = periodic;
 		
 	}
-	
-	
-	
 }

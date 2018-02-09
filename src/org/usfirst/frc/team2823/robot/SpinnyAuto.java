@@ -8,15 +8,13 @@ public class SpinnyAuto extends Autonomous {
 	
 	@Override
 	public void init() {
-		BlueprintStep[] blueprints = new BlueprintStep[] {new BlueprintStep(7.0, this::stageStart, this::stagePeriodic)};
+		BlueprintStep[] blueprints = new BlueprintStep[] {new BlueprintStep(7.0, this::spinStart, this::spinPeriodic)};
 		setBlueprints(blueprints);
 		
 		start();
 	}
 	
-	//drive across the baseline
-	public int stageStart() {
-		//run entry code	
+	public int spinStart() {
 		robot.leftControl.configureGoal(90, 300, 300, false);
 		robot.rightControl.configureGoal(-90, 300, 300, false);
 			
@@ -24,11 +22,9 @@ public class SpinnyAuto extends Autonomous {
 		robot.rightControl.enable();
 		
 		return 0;
-		
-		//move on to the next stage once plan is complete
 	}
 	
-	public int stagePeriodic() {
+	public int spinPeriodic() {
 		if(robot.leftControl.isPlanFinished()&&robot.rightControl.isPlanFinished()) {
 			
 			robot.leftControl.reset();

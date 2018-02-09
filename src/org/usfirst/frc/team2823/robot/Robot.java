@@ -9,6 +9,7 @@ package org.usfirst.frc.team2823.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.Compressor;
@@ -18,6 +19,7 @@ import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Talon;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -56,15 +58,15 @@ public class Robot extends IterativeRobot {
 	TalonSRX rightMotor3;
 	TalonSRX rightMotor4;
 	
-	TalonSRX leftElbow;
-	TalonSRX rightElbow;
-	TalonSRX leftBelt;
-	TalonSRX rightBelt;
+	VictorSPX leftElbow;
+	VictorSPX rightElbow;
+	VictorSPX leftBelt;
+	VictorSPX rightBelt;
 	
 	TalonSRX fourbarMotor;
-	TalonSRX elevatorMotor;
+	VictorSPX elevatorMotor;
 
-	DoubleSolenoid solenoid1;
+	DoubleSolenoid driveSolenoid;
 	Compressor compressor;
 	
 	Encoder lDriveEncoder;
@@ -90,30 +92,39 @@ public class Robot extends IterativeRobot {
 	LeftDrivePIDOutput lDriveOutput;
 	RightDrivePIDOutput rDriveOutput;
 	
-	TrajectoryPlanner traj;
+	TrajectoryPlanner rightSwitchAutoTraj;
+	TrajectoryPlanner leftSwitchAutoTraj;
 	
-	double[][] plan = {{0,0,0},{60, 20, 0}};
+	double[][] rightSwitchAutoPlan = {{0,0,0},{60, 20, 0}};
+	double[][] leftSwitchAutoPlan = {{0,0,0},{60, -20, 0}};
+
+	boolean calibrate = false;
+	boolean pidTune = false;
 	
 	SendableChooser<Autonomous> autonomousChooser;
 	
-	double maxMotorPower = .8; // maximum motor power output for 775's - owen said 0.8, but trying 
-	double motorRampRate = 36;// owen
-	//double lastShift;
+	final static double ENC_TO_INCH = Math.PI * 6.0 * (24/60) * (1/3) * (1/256);
+	final static double INCH_TO_ENC = 1/ENC_TO_INCH;
 	
-	//final double ENC_TO_IN = 2 * Math.PI * WHEEL_RADIUS * DRIVE_RATIO / ENCODER_RESOLUTION;
-	//final double IN_TO_ENC = ENCODER_RESOLUTION / (2 * Math.PI * WHEEL_RADIUS * DRIVE_RATIO);
+	/*  1 spin of the wheel corresponds to 60/24 spins of the output axle (that's our 3rd stage gearing).
+	 *  The output axle is connected to a 36 t 'encoder gear' which spins another 12t 'encoder gear', so the encoder axles spins at 3 times that rate. 
+	 *  Then we have 256 ticks per revolution.  So I think that's a total of 60 / 24 * 3 * 256 = 1920  ticks per revolution
+	 */
 	
 	DoubleSolenoid.Value highGear = DoubleSolenoid.Value.kReverse;
 	DoubleSolenoid.Value lowGear = DoubleSolenoid.Value.kForward;
 	
-	double wheelDiameter = 4;
-	double highGearDistancePerRev = (wheelDiameter * Math.PI) / 12.2646604938; // 12.2646604938 775 turns per wheel rev
-	double lowGearDistancePerRev = (wheelDiameter * Math.PI) / 30.9375; // 30.9375 775 turns per wheel rev
-	double highGearDistancePerPulse = (highGearDistancePerRev / 12)*((15+5/8)/4); // 12 pulses per rev
-	double lowGearDistancePerPulse = (lowGearDistancePerRev / 12)*((15+5/8)/4); // 12 pulses per rev; ((15-5/8)/4) multiplier  because Owen probably did his math wrong
+	double transmissionUpper = 50.0;
+	double transmissionLower = 30.0;
 	
-	final static double ENC_TO_INCH = 0.01;
-	final static double INCH_TO_ENC = 100;
+	double velocity = 0.0;
+	double rCurrentDist = 0.0;
+	double lCurrentDist = 0.0;
+	double currentTime = 0.0;
+	double rLastDist = 0.0;
+	double lLastDist = 0.0;
+	double lastTime = 0.0;
+		
 	/**
 	 * This function is run when the robot is first started up and should be used
 	 * for any initialization code.
@@ -122,7 +133,7 @@ public class Robot extends IterativeRobot {
 	public void robotInit() {
 		autonomousChooser = new SendableChooser<Autonomous>();
 		//autonomousChooser.addDefault("Empty: Do Nothing", new EmptyAutonomous(this));
-		autonomousChooser.addObject("Cross Baseline", new GoGoFallbotAuto(this));
+		autonomousChooser.addObject("Switch Auto", new RightSwitchAuto(this));
 		autonomousChooser.addObject("Do a Spin", new SpinnyAuto(this));
 		SmartDashboard.putData("Autonomous Mode", autonomousChooser);
 		
@@ -152,14 +163,14 @@ public class Robot extends IterativeRobot {
 		rightMotor3.configOpenloopRamp(0, 0);
 		rightMotor4.configOpenloopRamp(0, 0);
 		
-		leftElbow = new TalonSRX(5);
-		rightElbow = new TalonSRX(6);
-		leftBelt = new TalonSRX(7);
-		rightBelt = new TalonSRX(8);
+		leftElbow = new VictorSPX(11);
+		rightElbow = new VictorSPX(12);
+		leftBelt = new VictorSPX(21);
+		rightBelt = new VictorSPX(22);
 		
 		fourbarMotor = new TalonSRX(31);
 		fourbarOutput = new FourbarOutput();
-		elevatorMotor = new TalonSRX(10);
+		elevatorMotor = new VictorSPX(41);
 			
 		lDriveEncoder = new Encoder(0, 1, false, Encoder.EncodingType.k4X);
 		lDriveEncoder.setDistancePerPulse(1);
@@ -175,13 +186,10 @@ public class Robot extends IterativeRobot {
 		fourbarEncoder = new Encoder(8,9, false, Encoder.EncodingType.k4X);
 		elevatorEncoder = new Encoder( 10, 11, false, Encoder.EncodingType.k4X);
 
-		//leftEncoder.setSamplesToAverage(20);
-		//rightEncoder.setSamplesToAverage(20);
-
-		solenoid1 = new DoubleSolenoid(0, 1);
+		driveSolenoid = new DoubleSolenoid(0, 1);
 		compressor = new Compressor(0);
 
-		solenoid1.set(lowGear);
+		driveSolenoid.set(lowGear);
 
 		lDriveEncoder.reset();
 		rDriveEncoder.reset();
@@ -193,8 +201,11 @@ public class Robot extends IterativeRobot {
 		lDriveOutput = new LeftDrivePIDOutput(this);
 		rDriveOutput = new RightDrivePIDOutput(this);
 		
-		traj = new TrajectoryPlanner(plan, 90, 3000, 6000);
-		traj.generate();
+		rightSwitchAutoTraj = new TrajectoryPlanner(rightSwitchAutoPlan, 90, 3000, 6000);
+		rightSwitchAutoTraj.generate();
+		
+		leftSwitchAutoTraj = new TrajectoryPlanner(leftSwitchAutoPlan, 90, 3000, 6000);
+		rightSwitchAutoTraj.generate();
 		
 		leftControl = new SnazzyMotionPlanner(0.1, 0.001, 0.3, 0, 0.00143, 0.0102,  leftInches, lDriveOutput, 0.005, "Left.csv");
 		rightControl= new SnazzyMotionPlanner(0.1, 0.001, 0.3, 0, 0.00143, 0.0102,  rightInches, rDriveOutput, 0.005,"Right.csv");
@@ -212,20 +223,9 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("R Encoder", 0);
 		SmartDashboard.putNumber("L Elbow", 0);
 		SmartDashboard.putNumber("R Elbow", 0);
+		SmartDashboard.putString("Driving Gear", "Low");
 	}
 
-	/**
-	 * This autonomous (along with the chooser code above) shows how to select
-	 * between different autonomous modes using the dashboard. The sendable chooser
-	 * code works with the Java SmartDashboard. If you prefer the LabVIEW Dashboard,
-	 * remove all of the chooser code and uncomment the getString line to get the
-	 * auto name from the text box below the Gyro
-	 *
-	 * <p>
-	 * You can add additional auto modes by adding additional comparisons to the
-	 * switch structure below with additional strings. If using the SendableChooser
-	 * make sure to add them to the chooser code above as well.
-	 */
 	@Override
 	public void autonomousInit() {
 		
@@ -239,23 +239,13 @@ public class Robot extends IterativeRobot {
 		leftControl.reset();
 		rightControl.reset();
 		
-		solenoid1.set(highGear);
-		try {
-			Thread.sleep(500);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		solenoid1.set(lowGear);
+		driveSolenoid.set(lowGear);
 		
 		((Autonomous) autonomousChooser.getSelected()).init();
 		
 		
 	}
 
-	/**
-	 * This function is called periodically during autonomous.
-	 */
 	@Override
 	public void autonomousPeriodic() {
 		((Autonomous) autonomousChooser.getSelected()).periodic();
@@ -264,86 +254,73 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("R Encoder", rDriveEncoder.get());
 	}
 
-	/**
-	 * This function is called periodically during operator control.
-	 */
 	@Override
 	public void teleopPeriodic() {
 		
-		gearLowButton.update(driveStick.getRawButton(leftTrigger));
-		gearHighButton.update(driveStick.getRawButton(leftBumper));
-		intakeOpenButton.update(driveStick.getRawButton(rightBumper));
-		intakeCubeButton.update(driveStick.getRawButton(rightTrigger));
-		intakeStowButton.update(driveStick.getRawButton(xButton));
-		dropCubeButton.update(driveStick.getRawButton(bButton));
-		testButton.update(driveStick.getRawButton(1));
-
-		if (gearLowButton.changed()) {
-			solenoid1.set(lowGear);
-			System.out.println("low");
-			//leftEncoder.setDistancePerPulse(lowGearDistancePerPulse);
-			//rightEncoder.setDistancePerPulse(lowGearDistancePerPulse);
-
-		}
-		if (gearHighButton.changed()) {
-			solenoid1.set(highGear);
-			System.out.println("high");
-			//leftEncoder.setDistancePerPulse(highGearDistancePerPulse);
-			//rightEncoder.setDistancePerPulse(highGearDistancePerPulse);
-
+		calibrate = false;
+		pidTune = false;
+		
+		if(!calibrate && pidTune) {
 			
-		}
-		
-		SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
-		SmartDashboard.putNumber("R Encoder", rightInches.pidGet());
-		SmartDashboard.putNumber("L Elbow", rDriveEncoder.get());
-		SmartDashboard.putNumber("R Elbow", rDriveEncoder.get());
-		//System.out.println(lowGearDistancePerPulse);
-		
-		leftMotor1.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 1) );
-		leftMotor2.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 1) );
-		rightMotor3.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 1));
-		rightMotor4.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 1));
-		
-		fourbarMotor.set(ControlMode.PercentOutput, operatorStick.getRawAxis(3)*.4);
-		
-		/*leftPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
-		rightPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
-		
-		if(testButton.on()){
-			if(testButton.changed()) {
-				lDriveEncoder.reset();
-				rDriveEncoder.reset();
+			currentTime = Timer.getFPGATimestamp();
+			rCurrentDist = rightInches.pidGet();
+			lCurrentDist = leftInches.pidGet();
+			
+			velocity  = ((lCurrentDist-lLastDist)/(currentTime-lastTime)+(rCurrentDist-rLastDist)/(currentTime-lastTime))/2;
+			
+			gearLowButton.update(driveStick.getRawButton(leftTrigger));
+			gearHighButton.update(driveStick.getRawButton(leftBumper));
+			intakeOpenButton.update(driveStick.getRawButton(rightBumper));
+			intakeCubeButton.update(driveStick.getRawButton(rightTrigger));
+			intakeStowButton.update(driveStick.getRawButton(xButton));
+			dropCubeButton.update(driveStick.getRawButton(bButton));
+			testButton.update(driveStick.getRawButton(1));
+			
+			/*if(velocity >= 50.0 && driveSolenoid.get() == lowGear) {
+				driveSolenoid.set(highGear);
+				SmartDashboard.putString("Driving Gear", "High");
+			} 
+			
+			if(velocity <= 30.0 && driveSolenoid.get() == highGear) {
+				driveSolenoid.set(lowGear);
+				SmartDashboard.putString("Driving Gear", "Low");
+			}*/
+	
+			if (gearLowButton.changed()) {
+				driveSolenoid.set(lowGear);
+				SmartDashboard.putString("Driving Gear", "Low");
+	
+			}
+			if (gearHighButton.changed()) {
+				driveSolenoid.set(highGear);
+				SmartDashboard.putString("Driving Gear", "High");
 				
-				//leftControl.configureGoal(SmartDashboard.getNumber("Setpoint", 0), 300, 300);
-				//rightControl.configureGoal(SmartDashboard.getNumber("Setpoint", 0), 300, 300);
-				
-				//leftControl.enable();
-				//rightControl.enable();
-				
-				leftPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
-				leftPIDControl.enable();
-				
-				rightPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
-				rightPIDControl.enable();
-
 			}
 			
-		}else if (testButton.changed()&& !testButton.on()){
-			leftPIDControl.disable();
-			rightPIDControl.disable();
+			SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
+			SmartDashboard.putNumber("R Encoder", rightInches.pidGet());
+			SmartDashboard.putNumber("L Elbow", rDriveEncoder.get());
+			SmartDashboard.putNumber("R Elbow", rDriveEncoder.get());
 			
-		}*/
+			leftMotor1.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 1) );
+			leftMotor2.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 1) );
+			rightMotor3.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 1));
+			rightMotor4.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 1));
+			
+			elevatorMotor.set(ControlMode.PercentOutput, operatorStick.getRawAxis(3)*.4);
+			
+			rLastDist = rCurrentDist;
+			lLastDist = lCurrentDist;
+			lastTime = currentTime;
 		
-		//This thing maybe
-		//motorx.set(joystick.getRawAxis(3) > maxSpeed ? joystick.getRawAxis(3) : 0.8)
-		//System.out.println(leftEncoder.getPeriod() + " " + rightEncoder.getPeriod());
-//System.out.println(motor3.getOutputCurrent());
+		} else if(calibrate && !pidTune) {
+			calibrateNow();
+		}else {
+			pidTune();
+		}
+		
 	}
 
-	/*
-	 * This function is called periodically during test mode.
-	 */
 
 	@Override
 	public void testInit() {
@@ -353,41 +330,63 @@ public class Robot extends IterativeRobot {
 
 	@Override
 	public void testPeriodic() {
+		
+	}
+	public void disabledInit() {
+		
+	}
+	
+	public void calibrateNow() {
 		testButton.update(driveStick.getRawButton(1));
-		
-		
-		leftControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
-		rightControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		
 		if(testButton.on()){
 			if(testButton.changed()) {
 				lDriveEncoder.reset();
 				rDriveEncoder.reset();
 				
-				//leftControl.configureGoal(SmartDashboard.getNumber("Setpoint", 0), 300, 300);
-				//rightControl.configureGoal(SmartDashboard.getNumber("Setpoint", 0), 300, 300);
+				leftControl.startCalibration();
+				rightControl.startCalibration();
 				
-				//leftControl.enable();
-				//rightControl.enable();
-				
-				leftControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 				leftControl.enable();
-				
-				//rightControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
-				//rightControl.enable();
+				rightControl.enable();
 
 			}
 			
 		}else if (testButton.changed()&& !testButton.on()){
 			leftControl.disable();
-			//rightControl.disable();
+			rightControl.disable();
 			
 			
 		}
 		SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
 		SmartDashboard.putNumber("R Encoder", rightInches.pidGet());
 	}
-	public void disabledInit() {
-		//System.out.println("disabled");
+	
+	public void pidTune() {
+		testButton.update(driveStick.getRawButton(1));
+		
+		leftPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		rightPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		
+			if(testButton.on()){
+				if(testButton.changed()) {
+					lDriveEncoder.reset();
+					rDriveEncoder.reset();
+					
+					leftPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
+					leftPIDControl.enable();
+					
+					rightPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
+					rightPIDControl.enable();
+	
+				}
+				
+			}else if (testButton.changed()&& !testButton.on()){
+				leftPIDControl.disable();
+				rightPIDControl.disable();
+				
+			}
+		SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
+		SmartDashboard.putNumber("R Encoder", rightInches.pidGet());
 	}
 }
