@@ -7,6 +7,8 @@
 
 package org.usfirst.frc.team2823.robot;
 
+import java.util.ArrayList;
+
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
@@ -103,7 +105,7 @@ public class Robot extends IterativeRobot {
 	
 	SendableChooser<Autonomous> autonomousChooser;
 	
-	final static double ENC_TO_INCH = Math.PI * 6.0 * (24/60) * (1/3) * (1/256);
+	final static double ENC_TO_INCH = Math.PI * 6.0 * (24.0/60.0) * (1.0/3.0) * (1.0/256.0);
 	final static double INCH_TO_ENC = 1/ENC_TO_INCH;
 	
 	/*  1 spin of the wheel corresponds to 60/24 spins of the output axle (that's our 3rd stage gearing).
@@ -121,10 +123,11 @@ public class Robot extends IterativeRobot {
 	double rCurrentDist = 0.0;
 	double lCurrentDist = 0.0;
 	double currentTime = 0.0;
-	double rLastDist = 0.0;
-	double lLastDist = 0.0;
-	double lastTime = 0.0;
-		
+	int velocitySample = 20;
+	ArrayList <Double> lLastDistances;
+	ArrayList <Double> rLastDistances;
+	ArrayList <Double> lastTimes;
+	boolean manual = false;
 	/**
 	 * This function is run when the robot is first started up and should be used
 	 * for any initialization code.
@@ -143,6 +146,10 @@ public class Robot extends IterativeRobot {
 	        **/
 		driveStick = new Joystick(0);
 		operatorStick = new Joystick(1);
+		
+		lLastDistances = new ArrayList<Double>(velocitySample);
+		rLastDistances = new ArrayList<Double>(velocitySample);
+		lastTimes = new ArrayList<Double>(velocitySample);
 
 		intakeOpenButton = new Button();
 		intakeCubeButton = new Button();
@@ -260,14 +267,7 @@ public class Robot extends IterativeRobot {
 		calibrate = false;
 		pidTune = false;
 		
-		if(!calibrate && pidTune) {
-			
-			currentTime = Timer.getFPGATimestamp();
-			rCurrentDist = rightInches.pidGet();
-			lCurrentDist = leftInches.pidGet();
-			
-			velocity  = ((lCurrentDist-lLastDist)/(currentTime-lastTime)+(rCurrentDist-rLastDist)/(currentTime-lastTime))/2;
-			
+		if(!calibrate && !pidTune) {			
 			gearLowButton.update(driveStick.getRawButton(leftTrigger));
 			gearHighButton.update(driveStick.getRawButton(leftBumper));
 			intakeOpenButton.update(driveStick.getRawButton(rightBumper));
@@ -276,30 +276,49 @@ public class Robot extends IterativeRobot {
 			dropCubeButton.update(driveStick.getRawButton(bButton));
 			testButton.update(driveStick.getRawButton(1));
 			
-			/*if(velocity >= 50.0 && driveSolenoid.get() == lowGear) {
-				driveSolenoid.set(highGear);
-				SmartDashboard.putString("Driving Gear", "High");
-			} 
+			currentTime = Timer.getFPGATimestamp();
+			rCurrentDist = rightInches.pidGet();
+			lCurrentDist = leftInches.pidGet();
+			lLastDistances.add(lCurrentDist);
+			rLastDistances.add(rCurrentDist);
+			lastTimes.add(currentTime);
 			
-			if(velocity <= 30.0 && driveSolenoid.get() == highGear) {
-				driveSolenoid.set(lowGear);
-				SmartDashboard.putString("Driving Gear", "Low");
-			}*/
-	
-			if (gearLowButton.changed()) {
-				driveSolenoid.set(lowGear);
-				SmartDashboard.putString("Driving Gear", "Low");
-	
+			if(lLastDistances.size()==velocitySample && rLastDistances.size() == velocitySample ) {
+				velocity  = ((lCurrentDist-lLastDistances.get(0))/(currentTime-lastTimes.get(0))+(rCurrentDist-rLastDistances.get(0))/(currentTime-lastTimes.get(0)))/2;
+				if(Math.abs(velocity) >= 50.0 && driveSolenoid.get() == lowGear && !manual) {
+					driveSolenoid.set(highGear);
+					SmartDashboard.putString("Driving Gear", "High");
+				} 
+				
+				if(Math.abs(velocity) <= 30.0 && driveSolenoid.get() == highGear && !manual) {
+					driveSolenoid.set(lowGear);
+					SmartDashboard.putString("Driving Gear", "Low");
+				}
+				
+				lLastDistances.remove(0);
+				rLastDistances.remove(0);
+				lastTimes.remove(0);
 			}
-			if (gearHighButton.changed()) {
+			
+			
+	
+			if (gearLowButton.held()) {
+				manual = true;
+				driveSolenoid.set(lowGear);
+				SmartDashboard.putString("Driving Gear", "Low");
+				
+			}else if (gearHighButton.held()) {
+				manual = true;
 				driveSolenoid.set(highGear);
 				SmartDashboard.putString("Driving Gear", "High");
 				
+			} else {
+				manual = false;
 			}
 			
 			SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
 			SmartDashboard.putNumber("R Encoder", rightInches.pidGet());
-			SmartDashboard.putNumber("L Elbow", rDriveEncoder.get());
+			SmartDashboard.putNumber("L Elbow", lDriveEncoder.get());
 			SmartDashboard.putNumber("R Elbow", rDriveEncoder.get());
 			
 			leftMotor1.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 1) );
@@ -309,9 +328,6 @@ public class Robot extends IterativeRobot {
 			
 			elevatorMotor.set(ControlMode.PercentOutput, operatorStick.getRawAxis(3)*.4);
 			
-			rLastDist = rCurrentDist;
-			lLastDist = lCurrentDist;
-			lastTime = currentTime;
 		
 		} else if(calibrate && !pidTune) {
 			calibrateNow();
@@ -349,6 +365,7 @@ public class Robot extends IterativeRobot {
 				
 				leftControl.enable();
 				rightControl.enable();
+				System.out.println("b");
 
 			}
 			
