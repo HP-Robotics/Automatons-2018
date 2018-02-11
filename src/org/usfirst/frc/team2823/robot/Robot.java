@@ -13,6 +13,8 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
@@ -78,6 +80,8 @@ public class Robot extends IterativeRobot {
 	Encoder fourbarEncoder;
 	Encoder elevatorEncoder;
 	
+	ADXRS450_Gyro gyro;
+	
 	DriveInchesPIDSource leftInches;
 	DriveInchesPIDSource rightInches;
 	
@@ -85,14 +89,15 @@ public class Robot extends IterativeRobot {
 	SnazzyPIDController leftPIDControl;
 	SnazzyPIDController rightPIDControl;
 	
-	SnazzyPIDController fourbarControl;
+	SnazzyPIDController fourbarPIDControl;
+	SnazzyMotionPlanner fourbarMotionControl;
 	FourbarOutput fourbarOutput;
 	
 	final double intake = 0.0;
 	final double mid = 10.0;
 	final double high_mid = 20.0;
 	final double high = 30.0;
-	double fourbarTracker = 0.0;
+	double fourbarSetpoint = 0.0;
 	
 	SnazzyMotionPlanner leftControl;
 	SnazzyMotionPlanner rightControl;
@@ -103,8 +108,11 @@ public class Robot extends IterativeRobot {
 	TrajectoryPlanner rightSwitchAutoTraj;
 	TrajectoryPlanner leftSwitchAutoTraj;
 	
-	double[][] rightSwitchAutoPlan = {{0,0,0},{60, 20, 0}};
-	double[][] leftSwitchAutoPlan = {{0,0,0},{60, -20, 0}};
+	TrajectoryPlanner rightScaleAutoTraj;
+	
+	double[][] rightSwitchAutoPlan = {{0,0,0},{120, -100, 0}};
+	double[][] leftSwitchAutoPlan = {{0,0,0},{120, 100, 0}};
+	double[][] rightScaleAutoPlan = {{0,0,0},{60, 0, 0},{120,-60, -90}};
 
 	boolean calibrate = false;
 	boolean pidTune = false;
@@ -142,7 +150,8 @@ public class Robot extends IterativeRobot {
 	public void robotInit() {
 		autonomousChooser = new SendableChooser<Autonomous>();
 		autonomousChooser.addDefault("Empty: Do Nothing", new EmptyAutonomous(this));
-		autonomousChooser.addObject("Switch Auto", new RightSwitchAuto(this));
+		autonomousChooser.addObject("Switch Auto", new SwitchAuto(this));
+		autonomousChooser.addObject("Scale Auto", new RightScaleAuto(this));
 		autonomousChooser.addObject("Do a Spin", new SpinnyAuto(this));
 		SmartDashboard.putData("Autonomous Mode", autonomousChooser);
 		
@@ -182,7 +191,7 @@ public class Robot extends IterativeRobot {
 		rightBelt = new VictorSPX(22);
 		
 		fourbarMotor = new TalonSRX(31);
-		fourbarOutput = new FourbarOutput();
+		fourbarOutput = new FourbarOutput(this);
 		elevatorMotor = new VictorSPX(41);
 			
 		lDriveEncoder = new Encoder(0, 1, false, Encoder.EncodingType.k4X);
@@ -196,7 +205,7 @@ public class Robot extends IterativeRobot {
 		leftInches = new DriveInchesPIDSource(lDriveEncoder);
 		rightInches = new DriveInchesPIDSource(rDriveEncoder);
 		
-		fourbarEncoder = new Encoder(8,9, false, Encoder.EncodingType.k4X);
+		fourbarEncoder = new Encoder(8,9, true, Encoder.EncodingType.k4X);
 		elevatorEncoder = new Encoder( 10, 11, false, Encoder.EncodingType.k4X);
 
 		driveSolenoid = new DoubleSolenoid(0, 1);
@@ -210,15 +219,21 @@ public class Robot extends IterativeRobot {
 		rIntakeEncoder.reset();
 		fourbarEncoder.reset();
 		elevatorEncoder.reset();
+		
+		gyro = new ADXRS450_Gyro();
+		gyro.reset();
 	
 		lDriveOutput = new LeftDrivePIDOutput(this);
 		rDriveOutput = new RightDrivePIDOutput(this);
 		
-		rightSwitchAutoTraj = new TrajectoryPlanner(rightSwitchAutoPlan, 90, 3000, 6000);
+		rightSwitchAutoTraj = new TrajectoryPlanner(rightSwitchAutoPlan, 100*0.9, 2000*0.5, 3400*0.5); //the integers are what the chassis is capable of, then we limit it with the decimals
 		rightSwitchAutoTraj.generate();
 		
-		leftSwitchAutoTraj = new TrajectoryPlanner(leftSwitchAutoPlan, 90, 3000, 6000);
-		rightSwitchAutoTraj.generate();
+		leftSwitchAutoTraj = new TrajectoryPlanner(leftSwitchAutoPlan, 100*0.9, 2000*0.5, 3400*0.5);
+		leftSwitchAutoTraj.generate();
+		
+		rightScaleAutoTraj = new TrajectoryPlanner(rightScaleAutoPlan, 100*0.35, 2000*0.4, 3400*0.4);
+		rightScaleAutoTraj.generate();
 		
 		leftControl = new SnazzyMotionPlanner(0.1, 0.001, 0.75, 0, 0.00152, 0.0101,  leftInches, lDriveOutput, 0.005, "Left.csv");
 		rightControl= new SnazzyMotionPlanner(0.1, 0.001, 0.75, 0, 0.00152, 0.0101,  rightInches, rDriveOutput, 0.005,"Right.csv");
@@ -226,7 +241,11 @@ public class Robot extends IterativeRobot {
 		leftPIDControl = new SnazzyPIDController(0.04, 0.001, 0.8, 0, leftInches, lDriveOutput, 0.005, "Left.csv");
 		rightPIDControl= new SnazzyPIDController(0.04, 0.001, 0.8, 0, rightInches, rDriveOutput, 0.005,"Right.csv");
 		
-		fourbarControl = new SnazzyPIDController(0.1, 0.0, 0.0, 0.0, fourbarEncoder, fourbarOutput, 0.005, "Fourbar.csv");
+		fourbarPIDControl = new SnazzyPIDController(0.0008, 0.0, 0.0, 0.0, fourbarEncoder, fourbarOutput, 0.005, "FourbarPID.csv");
+		fourbarPIDControl.setOutputRange(-0.5, 0.5);
+		//fourbarMotionControl = new SnazzyMotionPlanner(0.0008, 0.0, 0.0, 0.0, ka, kv, fourbarEncoder, fourbarOutput, 0.005, "FourbarMotion.csv");
+		
+		
 		
 		SmartDashboard.putNumber("P", 0.01);
 		SmartDashboard.putNumber("I", 0.0);
@@ -272,7 +291,7 @@ public class Robot extends IterativeRobot {
 	public void teleopPeriodic() {
 		
 		calibrate = false;
-		pidTune = true;
+		pidTune = false;
 		
 		if(!calibrate && !pidTune) {			
 			gearLowButton.update(driveStick.getRawButton(leftTrigger));
@@ -307,27 +326,15 @@ public class Robot extends IterativeRobot {
 				lastTimes.remove(0);
 			}
 			
-			if(driveStick.getPOV() == 45 ) {
-				fourbarTracker +=1;
+			if(driveStick.getPOV() == 45 && fourbarSetpoint <60000 ) {
+				fourbarSetpoint +=1;
 			}
-			if(driveStick.getPOV() == 135 && fourbarTracker > 0) {
-				fourbarTracker -= 1;
-			}
-			
-			if(fourbarTracker >= 0 && fourbarTracker <= 20) {
-				fourbarControl.setSetpoint(intake);
-			}
-			if(fourbarTracker > 20 && fourbarTracker <=40 ) {
-				fourbarControl.setSetpoint(mid);
-			}
-			if(fourbarTracker > 40 && fourbarTracker <= 60) {
-				fourbarControl.setSetpoint(high_mid);
-			}
-			if(fourbarTracker > 60) {
-				fourbarControl.setSetpoint(high);
+			if(driveStick.getPOV() == 135 && fourbarSetpoint > 0) {
+				fourbarSetpoint -= 1;
 			}
 			
-			fourbarControl.enable();
+			fourbarPIDControl.setSetpoint(fourbarSetpoint);
+			fourbarPIDControl.enable();
 			
 			if (gearLowButton.held()) {
 				manual = true;
@@ -347,18 +354,20 @@ public class Robot extends IterativeRobot {
 			SmartDashboard.putNumber("R Encoder", rightInches.pidGet());
 			SmartDashboard.putNumber("L Elbow", lIntakeEncoder.get());
 			SmartDashboard.putNumber("R Elbow", rIntakeEncoder.get());
+			SmartDashboard.putNumber("Fourbar", fourbarEncoder.get());
+
 			
-			leftMotor1.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 1) );
-			leftMotor2.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 1) );
-			rightMotor3.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 1));
-			rightMotor4.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 1));
+			leftMotor1.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3) );
+			leftMotor2.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3) );
+			rightMotor3.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 3));
+			rightMotor4.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 3));
 			
 			elevatorMotor.set(ControlMode.PercentOutput, operatorStick.getRawAxis(3)*.4);
 			
 		
 		} else if(calibrate && !pidTune) {
 			calibrateNow();
-		}else {
+		}else if(!calibrate && pidTune) {
 			pidTune();
 		}
 		
@@ -392,13 +401,12 @@ public class Robot extends IterativeRobot {
 				
 				leftControl.enable();
 				rightControl.enable();
-
+				
 			}
 			
 		}else if (testButton.changed()&& !testButton.on()){
 			leftControl.disable();
-			rightControl.disable();
-			
+			rightControl.disable();			
 			
 		}
 		SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
@@ -410,7 +418,7 @@ public class Robot extends IterativeRobot {
 		
 		leftPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		rightPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
-		fourbarControl.setPID(SmartDashboard.getNumber("P", 0),SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		fourbarPIDControl.setPID(SmartDashboard.getNumber("P", 0),SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		
 			if(testButton.on()){
 				if(testButton.changed()) {
@@ -422,8 +430,8 @@ public class Robot extends IterativeRobot {
 					//leftPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 					//leftPIDControl.enable();
 					
-					fourbarControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
-					fourbarControl.enable();
+					fourbarPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
+					fourbarPIDControl.enable();
 					
 					//rightPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 					//rightPIDControl.enable();
@@ -433,7 +441,7 @@ public class Robot extends IterativeRobot {
 			}else if (testButton.changed()&& !testButton.on()){
 				//leftPIDControl.disable();
 				//rightPIDControl.disable();
-				fourbarControl.disable();
+				fourbarPIDControl.disable();
 				
 			}
 		SmartDashboard.putNumber("L Encoder", leftInches.pidGet());

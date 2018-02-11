@@ -1,8 +1,8 @@
 package org.usfirst.frc.team2823.robot;
 
-public class LeftSwitchAuto extends Autonomous {
+public class RightScaleAuto extends Autonomous {
 	
-	public LeftSwitchAuto(Robot robot) {
+	public RightScaleAuto(Robot robot) {
 		super(robot);
 	}
 	
@@ -16,8 +16,8 @@ public class LeftSwitchAuto extends Autonomous {
 	
 	public int goStart() {
 		
-		robot.leftControl.configureTrajectory(robot.leftSwitchAutoTraj.getLeftTrajectory(), false);
-		robot.rightControl.configureTrajectory(robot.leftSwitchAutoTraj.getRightTrajectory(), false);
+		robot.leftControl.configureTrajectory(robot.rightScaleAutoTraj.getLeftTrajectory(), false);
+		robot.rightControl.configureTrajectory(robot.rightScaleAutoTraj.getRightTrajectory(), false);
 		
 		robot.leftControl.enable();
 		robot.rightControl.enable();

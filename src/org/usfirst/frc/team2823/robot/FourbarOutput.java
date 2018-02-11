@@ -7,8 +7,9 @@ import edu.wpi.first.wpilibj.PIDOutput;
 public class FourbarOutput implements PIDOutput {
 	
 	Robot r;
-	public FourbarOutput()  {
+	public FourbarOutput(Robot robot)  {
 		// TODO Auto-generated constructor stub
+		r = robot;
 	}
 
 	@Override
