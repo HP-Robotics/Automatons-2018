@@ -47,7 +47,7 @@ public class Robot extends IterativeRobot {
 	Button intakeOpenButton;
 	Button intakeCubeButton; 
 	Button intakeStowButton;
-	Button dropCubeButton;
+	Button clampButton;
 	Button gearHighButton;
 	Button gearLowButton;
 	
@@ -66,6 +66,7 @@ public class Robot extends IterativeRobot {
 	TalonSRX fourbarMotor;
 	VictorSPX elevatorMotor;
 
+	DoubleSolenoid clamper;
 	DoubleSolenoid driveSolenoid;
 	Compressor compressor;
 	
@@ -114,6 +115,9 @@ public class Robot extends IterativeRobot {
 	DoubleSolenoid.Value highGear = DoubleSolenoid.Value.kReverse;
 	DoubleSolenoid.Value lowGear = DoubleSolenoid.Value.kForward;
 	
+	DoubleSolenoid.Value clampIt = DoubleSolenoid.Value.kForward;
+	DoubleSolenoid.Value unClampIt = DoubleSolenoid.Value.kReverse;
+	
 	double transmissionUpper = 50.0;
 	double transmissionLower = 30.0;
 	
@@ -147,7 +151,7 @@ public class Robot extends IterativeRobot {
 		intakeOpenButton = new Button();
 		intakeCubeButton = new Button();
 		intakeStowButton = new Button();
-		dropCubeButton = new Button();
+		clampButton = new Button();
 		gearHighButton = new Button();
 		gearLowButton = new Button();
 		
@@ -186,10 +190,12 @@ public class Robot extends IterativeRobot {
 		fourbarEncoder = new Encoder(8,9, false, Encoder.EncodingType.k4X);
 		elevatorEncoder = new Encoder( 10, 11, false, Encoder.EncodingType.k4X);
 
+		clamper = new DoubleSolenoid(2,3);
 		driveSolenoid = new DoubleSolenoid(0, 1);
 		compressor = new Compressor(0);
 
 		driveSolenoid.set(lowGear);
+		clamper.set(unClampIt);
 
 		lDriveEncoder.reset();
 		rDriveEncoder.reset();
@@ -273,7 +279,7 @@ public class Robot extends IterativeRobot {
 			intakeOpenButton.update(driveStick.getRawButton(rightBumper));
 			intakeCubeButton.update(driveStick.getRawButton(rightTrigger));
 			intakeStowButton.update(driveStick.getRawButton(xButton));
-			dropCubeButton.update(driveStick.getRawButton(bButton));
+			clampButton.update(driveStick.getRawButton(bButton));
 			testButton.update(driveStick.getRawButton(1));
 			
 			/*if(velocity >= 50.0 && driveSolenoid.get() == lowGear) {
@@ -285,6 +291,12 @@ public class Robot extends IterativeRobot {
 				driveSolenoid.set(lowGear);
 				SmartDashboard.putString("Driving Gear", "Low");
 			}*/
+			
+			if(clampButton.on()) {
+				clamper.set(clampIt);
+			}else if(!clampButton.on()) {
+				clamper.set(unClampIt);
+			}
 	
 			if (gearLowButton.changed()) {
 				driveSolenoid.set(lowGear);
