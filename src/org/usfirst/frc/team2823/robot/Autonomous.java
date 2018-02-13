@@ -46,6 +46,9 @@ public class Autonomous {
 	}
 
 	public boolean checkStageTimeout() {
+		if(stageData == null) {
+			return true;
+		}
 		if (stage < 0 || stage >= stageData.length) {
 			robot.leftMotor1.set(ControlMode.Velocity, 0.0);
 			robot.leftMotor2.set(ControlMode.Velocity, 0.0);

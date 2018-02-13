@@ -35,7 +35,7 @@ public class TrajectoryPlanner {
     	Waypoint[] points = new Waypoint[arrayPoints.length] ;
 
     	for (int i=0; i<arrayPoints.length;i++) {
-    		points[i]=new Waypoint(arrayPoints[i][0], arrayPoints[i][1],arrayPoints[i][2]);
+    		points[i]=new Waypoint(arrayPoints[i][0], arrayPoints[i][1],Pathfinder.d2r(arrayPoints[i][2]));
     	}
     	File myFile = new File(getFileName());
 
@@ -45,12 +45,11 @@ public class TrajectoryPlanner {
     		m_trajectory = Pathfinder.generate(points, config);
     		Pathfinder.writeToCSV(myFile, m_trajectory);
     	}
-
+    	System.out.println(m_trajectory.length());
         TankModifier modifier = new TankModifier(m_trajectory).modify(wheelbase);
         // Do something with the new Trajectories...
         m_left = modifier.getLeftTrajectory();
-        m_right = modifier.getRightTrajectory();
-        
+        m_right = modifier.getRightTrajectory();        
         
         for (int i = 0; i < m_trajectory.length(); i++) {
             Trajectory.Segment seg = m_trajectory.get(i);
@@ -78,8 +77,33 @@ public class TrajectoryPlanner {
         log.close();
     }
     
+    
+    
     public Trajectory getLeftTrajectory() {
     	return m_left;
+    }
+    
+    public Trajectory getInvertTrajectory(Trajectory t) {
+    	Trajectory inverted = new Trajectory(t.length());
+    	for(int i = 0; i<t.length();i++) {
+    		inverted.segments[i] = t.segments[i].copy();
+    		inverted.segments[i].x = t.segments[i].x *-1;
+    		inverted.segments[i].y = t.segments[i].y *-1;
+    		inverted.segments[i].acceleration = t.segments[i].acceleration*-1;
+    		inverted.segments[i].jerk = t.segments[i].jerk*-1;
+    		inverted.segments[i].position = t.segments[i].position*-1;
+    		inverted.segments[i].velocity = t.segments[i].velocity*-1;
+    		//TODO invert heading?
+    	}
+    	return inverted;
+    }
+    
+    public Trajectory getInvertedLeftTrajectory() {
+    	return getInvertTrajectory(m_right);
+    }
+    
+    public Trajectory getInvertedRightTrajectory() {
+    	return getInvertTrajectory(m_left);
     }
     
     public Trajectory getRightTrajectory() {
