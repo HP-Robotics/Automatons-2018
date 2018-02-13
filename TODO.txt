@@ -1,5 +1,6 @@
 - Camera
-- Redo auto
-- Update jaci's nonsense
-- Add indicators to the SmartDashboard
-- Automatic Transmission
+- Four bar up and down set points
+- intake code
+- additional autos
+- redo auto
+- An intake pid controller

@@ -90,6 +90,9 @@ public class Robot extends IterativeRobot {
 	SnazzyPIDController leftPIDControl;
 	SnazzyPIDController rightPIDControl;
 	
+	SnazzyPIDController leftIntakeControl;
+	SnazzyPIDController rightIntakeControl;
+	
 	SnazzyPIDController fourbarPIDControl;
 	SnazzyMotionPlanner fourbarMotionControl;
 	FourbarOutput fourbarOutput;
@@ -105,6 +108,9 @@ public class Robot extends IterativeRobot {
 	
 	LeftDrivePIDOutput lDriveOutput;
 	RightDrivePIDOutput rDriveOutput;
+	
+	LeftIntakeOutput lIntakeOutput;
+	RightIntakeOutput rIntakeOutput;
 	
 	TrajectoryPlanner rightSwitchAutoTraj;
 	TrajectoryPlanner leftSwitchAutoTraj;
@@ -232,6 +238,9 @@ public class Robot extends IterativeRobot {
 		lDriveOutput = new LeftDrivePIDOutput(this);
 		rDriveOutput = new RightDrivePIDOutput(this);
 		
+		lIntakeOutput = new LeftIntakeOutput(this);
+		rIntakeOutput = new RightIntakeOutput(this);
+		
 		rightSwitchAutoTraj = new TrajectoryPlanner(rightSwitchAutoPlan, 100*0.9, 2000*0.5, 3400*0.5); //the integers are what the chassis is capable of, then we limit it with the decimals
 		rightSwitchAutoTraj.generate();
 		
@@ -251,7 +260,8 @@ public class Robot extends IterativeRobot {
 		fourbarPIDControl.setOutputRange(-0.5, 0.5);
 		//fourbarMotionControl = new SnazzyMotionPlanner(0.0008, 0.0, 0.0, 0.0, ka, kv, fourbarEncoder, fourbarOutput, 0.005, "FourbarMotion.csv");
 		
-		
+		leftIntakeControl = new SnazzyPIDController(0, 0, 0, 0, lIntakeEncoder, lIntakeOutput, 0.005, "leftIntake.csv");
+		rightIntakeControl = new SnazzyPIDController(0, 0, 0, 0, rIntakeEncoder, rIntakeOutput, 0.005, "rightIntake.csv");
 		
 		SmartDashboard.putNumber("P", 0.01);
 		SmartDashboard.putNumber("I", 0.0);
@@ -431,8 +441,10 @@ public class Robot extends IterativeRobot {
 		leftPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		rightPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		fourbarPIDControl.setPID(SmartDashboard.getNumber("P", 0),SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
-		
-			if(testButton.on()){
+		leftIntakeControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("P", 0));
+		rightIntakeControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("P", 0));
+	
+		if(testButton.on()){
 				if(testButton.changed()) {
 					lDriveEncoder.reset();
 					rDriveEncoder.reset();
@@ -441,6 +453,12 @@ public class Robot extends IterativeRobot {
 					
 					//leftPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 					//leftPIDControl.enable();
+					
+					//leftIntakeControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
+					//leftIntakeControl.enable();
+					
+					//rightIntakeControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
+					//rightIntakeControl.enable();
 					
 					fourbarPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 					fourbarPIDControl.enable();
@@ -454,6 +472,8 @@ public class Robot extends IterativeRobot {
 				//leftPIDControl.disable();
 				//rightPIDControl.disable();
 				fourbarPIDControl.disable();
+				//leftIntakeControl.disable();
+				//rightIntakeControl.disable();
 				
 			}
 		SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
