@@ -98,6 +98,7 @@ public class Robot extends IterativeRobot {
 	final double grab = 20.0;
 	final double start = 0.0;
 	double intakeSetpoint = 0.0;
+	String intakeIndicator = "Start";
 	
 	SnazzyPIDController fourbarPIDControl;
 	SnazzyMotionPlanner fourbarMotionControl;
@@ -282,7 +283,9 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("L Elbow", 0);
 		SmartDashboard.putNumber("R Elbow", 0);
 		SmartDashboard.putString("Driving Gear", "Low");
-		 SmartDashboard.putNumber("Fourbar", 0);
+		SmartDashboard.putString("Intake Setpoint", "Start");
+		SmartDashboard.putNumber("Fourbar", 0);
+		
 	}
 
 	@Override
@@ -444,6 +447,22 @@ public class Robot extends IterativeRobot {
 			SmartDashboard.putNumber("L Elbow", lIntakeEncoder.get());
 			SmartDashboard.putNumber("R Elbow", rIntakeEncoder.get());
 			SmartDashboard.putNumber("Fourbar", fourbarEncoder.get());
+			
+			switch((int)intakeSetpoint) {
+				case (int)grab:
+					intakeIndicator = "Grab";
+					break;
+				case (int)open:
+					intakeIndicator = "Open";
+					break;
+				case (int)stow:
+					intakeIndicator = "Stow";
+					break;
+					
+			}
+					
+					
+			SmartDashboard.putString("Intake Setpoint", intakeIndicator);
 
 			
 			leftMotor1.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3) );
