@@ -50,7 +50,7 @@ public class Robot extends IterativeRobot {
 	Button intakeOpenButton;
 	Button toggleIntakeDftButton; 
 	Button intakeOutButton;
-	Button clampButton;
+	Button unClampButton;
 	Button gearHighButton;
 	Button gearLowButton;
 	
@@ -194,7 +194,7 @@ public class Robot extends IterativeRobot {
 		intakeOpenButton = new Button();
 		toggleIntakeDftButton = new Button();
 		intakeOutButton = new Button();
-		clampButton = new Button();
+		unClampButton = new Button();
 		gearHighButton = new Button();
 		gearLowButton = new Button();
 		
@@ -339,7 +339,7 @@ public class Robot extends IterativeRobot {
 			intakeOpenButton.update(operatorStick.getRawButton(rightBumper));
 			toggleIntakeDftButton.update(operatorStick.getRawButton(yButton));
 			intakeOutButton.update(operatorStick.getRawButton(rightTrigger));
-			clampButton.update(driveStick.getRawButton(bButton) || operatorStick.getRawButton(bButton));
+			unClampButton.update(operatorStick.getRawButton(bButton));
 			testButton.update(driveStick.getRawButton(1));
 			resetButton.update(driveStick.getRawButton(startButton) || operatorStick.getRawButton(startButton));
 		
@@ -358,11 +358,15 @@ public class Robot extends IterativeRobot {
 				elevatorEncoder.reset();
 			}
 			
-			if(!clampButton.on()) {
+			if(!unClampButton.on()) {
 				clamper.set(clampIt);
 				clamped = true;
+				if(fourbarEncoder.get()<= 500 && unClampButton.changed()) {
+					toggleIntakeDftButton.reset();
+				}
+	
 				
-			}else if(clampButton.on()) {
+			}else if(unClampButton.on()) {
 				clamper.set(unClampIt);
 				clamped = false;
 			}
@@ -439,13 +443,11 @@ public class Robot extends IterativeRobot {
 							lIntakeSetpoint = lStow;
 							if(stowDelay >= 20) {
 								rIntakeSetpoint = rStow;
-								System.out.println("right now");
 							}
 						} else {
 							rIntakeSetpoint = rStow;
 							if(stowDelay >= 20) {
 								lIntakeSetpoint = lStow;
-								System.out.println("left now");
 							}
 						}
 						
