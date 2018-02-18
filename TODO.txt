@@ -1,6 +1,5 @@
 - Camera
 - Four bar up and down set points
-- intake code
-- additional autos
-- redo auto
-- An intake pid controller
+-Move forward auto
+-Check letters b4 go in auto
+-

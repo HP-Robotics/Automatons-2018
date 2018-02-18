@@ -1,8 +1,8 @@
 package org.usfirst.frc.team2823.robot;
 
-public class RightScaleAuto extends Autonomous {
+public class DriveForwardAuto extends Autonomous {
 	
-	public RightScaleAuto(Robot robot) {
+	public DriveForwardAuto(Robot robot) {
 		super(robot);
 	}
 	
@@ -17,8 +17,8 @@ public class RightScaleAuto extends Autonomous {
 	public int goStart() {
 		robot.driveSolenoid.set(robot.highGear);
 		
-		robot.leftControl.configureTrajectory(robot.rightScaleAutoTraj.getLeftTrajectory(), false);
-		robot.rightControl.configureTrajectory(robot.rightScaleAutoTraj.getRightTrajectory(), false);
+		robot.leftControl.configureTrajectory(robot.driveForwardTraj.getLeftTrajectory(), false);
+		robot.rightControl.configureTrajectory(robot.driveForwardTraj.getRightTrajectory(), false);
 		
 		robot.leftControl.enable();
 		robot.rightControl.enable();

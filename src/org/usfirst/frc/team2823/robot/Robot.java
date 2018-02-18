@@ -134,6 +134,8 @@ public class Robot extends IterativeRobot {
 	
 	TrajectoryPlanner rightScaleAutoTraj;
 	
+	TrajectoryPlanner driveForwardTraj;
+	
 	double[][] rightSwitchAutoPlan = {{0,0,0},{120, -72, 0}};
 	double[][] rightSwitchBackPlan = {{20, 10, 0}, {120, -72, 0}};
 	
@@ -143,6 +145,8 @@ public class Robot extends IterativeRobot {
 	double[][] switchGrabCubePlan = {{0,0,0}, {70, 0, 0}};
 	
 	double[][] rightScaleAutoPlan = {{0,0,0},{60, 0, 0},{120,-60, -90}};
+	
+	double[][] driveForwardPlan = {{0,0,0}, {60, 0, 0}};
 
 	boolean calibrate = false;
 	boolean pidTune = false;
@@ -185,6 +189,7 @@ public class Robot extends IterativeRobot {
 	public void robotInit() {
 		autonomousChooser = new SendableChooser<Autonomous>();
 		autonomousChooser.addDefault("Empty: Do Nothing", new EmptyAutonomous(this));
+		autonomousChooser.addObject("Drive Forward", new DriveForwardAuto(this));
 		autonomousChooser.addObject("Switch Auto", new SwitchAuto(this));
 		autonomousChooser.addObject("Scale Auto", new RightScaleAuto(this));
 		autonomousChooser.addObject("Do a Spin", new SpinnyAuto(this));
@@ -282,8 +287,11 @@ public class Robot extends IterativeRobot {
 		switchGrabCubeTraj = new TrajectoryPlanner(switchGrabCubePlan, 100*0.5, 300, 300);
 		switchGrabCubeTraj.generate();
 		
-		rightScaleAutoTraj = new TrajectoryPlanner(rightScaleAutoPlan, 100*0.35, 2000*0.4, 3400*0.4);
+		rightScaleAutoTraj = new TrajectoryPlanner(rightScaleAutoPlan, 100, 300, 300);
 		rightScaleAutoTraj.generate();
+		
+		driveForwardTraj = new TrajectoryPlanner(driveForwardPlan, 100*0.5, 300, 300);
+		driveForwardTraj.generate();
 		
 		leftControl = new SnazzyMotionPlanner(0.1, 0.001, 0.75, 0, 0.00246, 0.0103,  leftInches, lDriveOutput, 0.005, "Left.csv");
 		rightControl= new SnazzyMotionPlanner(0.1, 0.001, 0.75, 0, 0.00246, 0.0103,  rightInches, rDriveOutput, 0.005,"Right.csv");
