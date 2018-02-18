@@ -126,12 +126,22 @@ public class Robot extends IterativeRobot {
 	RightIntakeOutput rIntakeOutput;
 	
 	TrajectoryPlanner rightSwitchAutoTraj;
+	TrajectoryPlanner rightSwitchBackTraj;
 	TrajectoryPlanner leftSwitchAutoTraj;
+	TrajectoryPlanner leftSwitchBackTraj;
+	
+	TrajectoryPlanner switchGrabCubeTraj;
 	
 	TrajectoryPlanner rightScaleAutoTraj;
 	
 	double[][] rightSwitchAutoPlan = {{0,0,0},{120, -72, 0}};
+	double[][] rightSwitchBackPlan = {{20, 10, 0}, {120, -72, 0}};
+	
 	double[][] leftSwitchAutoPlan = {{0,0,0},{120, 72, 0}};
+	double[][] leftSwitchBackPlan = {{20, -10, 0}, {120, 72, 0}};
+	
+	double[][] switchGrabCubePlan = {{0,0,0}, {70, 0, 0}};
+	
 	double[][] rightScaleAutoPlan = {{0,0,0},{60, 0, 0},{120,-60, -90}};
 
 	boolean calibrate = false;
@@ -262,6 +272,15 @@ public class Robot extends IterativeRobot {
 		
 		leftSwitchAutoTraj = new TrajectoryPlanner(leftSwitchAutoPlan, 100*0.5, 300, 300);
 		leftSwitchAutoTraj.generate();
+		
+		leftSwitchBackTraj = new TrajectoryPlanner(leftSwitchBackPlan, 100*0.5, 300, 300);
+		leftSwitchBackTraj.generate();
+		
+		rightSwitchBackTraj = new TrajectoryPlanner(rightSwitchBackPlan, 100*0.5, 300, 300);
+		rightSwitchBackTraj.generate();
+		
+		switchGrabCubeTraj = new TrajectoryPlanner(switchGrabCubePlan, 100*0.5, 300, 300);
+		switchGrabCubeTraj.generate();
 		
 		rightScaleAutoTraj = new TrajectoryPlanner(rightScaleAutoPlan, 100*0.35, 2000*0.4, 3400*0.4);
 		rightScaleAutoTraj.generate();
