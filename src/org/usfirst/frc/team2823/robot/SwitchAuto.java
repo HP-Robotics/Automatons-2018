@@ -11,16 +11,20 @@ public class SwitchAuto extends Autonomous {
 	@Override
 	public void init() {
 		BlueprintStep[] blueprints = new BlueprintStep[] {new BlueprintStep(5.0, this::goStart, this::goPeriodic), 
-				new BlueprintStep(5.0, this::backStart, this::goPeriodic)};
+				new BlueprintStep(1.0, this::unClampStart, this::unClampPeriodic)/*, 
+				new BlueprintStep(5.0, this::backStart, this::goPeriodic)*/};
 		setBlueprints(blueprints);
 		
 		start();
 	}
 	
 	public int goStart() {
-		System.out.println("moo");
 		String gameData;
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		
+		robot.fourbarPIDControl.setSetpoint(50000);
+		robot.fourbarPIDControl.enable();
+		
 		if(gameData.length() > 0)
 		{
 			if(gameData.charAt(0) == 'L')
@@ -76,6 +80,16 @@ public class SwitchAuto extends Autonomous {
 			robot.rightControl.enable();
 			
 		}
+		return 0;
+	}
+	
+	public int unClampStart() {
+		robot.clamper.set(robot.unClampIt);
+		return 0;
+	}
+	
+	public int unClampPeriodic() {
+		nextStage();
 		return 0;
 	}
 	
