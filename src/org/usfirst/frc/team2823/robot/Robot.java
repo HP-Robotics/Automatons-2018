@@ -104,17 +104,17 @@ public class Robot extends IterativeRobot {
 	double stowDelay = 0.0;
 	boolean goinDown = false;
 	boolean goinUp = false;
+	final double stowFudge = 10;
 	String intakeIndicator = "Start";
 	
 	SnazzyPIDController fourbarPIDControl;
 	//SnazzyMotionPlanner fourbarMotionControl;
 	FourbarOutput fourbarOutput;
 	
-	final double intake = 0.0;
-	final double mid = 10.0;
-	final double high_mid = 20.0;
-	final double high = 30.0;
 	double fourbarSetpoint = 0.0;
+	final double downStep = 1000.0;
+	final double upStep = 1000.0;
+	final double fourbarLastBit = downStep*8;
 	
 	SnazzyMotionPlanner leftControl;
 	SnazzyMotionPlanner rightControl;
@@ -169,8 +169,8 @@ public class Robot extends IterativeRobot {
 	DoubleSolenoid.Value clampIt = DoubleSolenoid.Value.kForward;
 	DoubleSolenoid.Value unClampIt = DoubleSolenoid.Value.kReverse;
 	
-	double transmissionUpper = 65.0;
-	double transmissionLower = 45.0;
+	double transmissionUpper = 75.0;
+	double transmissionLower = 55.0;
 	
 	double velocity = 0.0;
 	double rCurrentDist = 0.0;
@@ -300,7 +300,7 @@ public class Robot extends IterativeRobot {
 		rightPIDControl= new SnazzyPIDController(0.04, 0.001, 0.8, 0, rightInches, rDriveOutput, 0.005,"Right.csv");
 		
 		fourbarPIDControl = new SnazzyPIDController(0.0005, 0.0, 0.0, 0.0, fourbarEncoder, fourbarOutput, 0.005, "FourbarPID.csv");
-		fourbarPIDControl.setOutputRange(-0.5, 1.0);
+		fourbarPIDControl.setOutputRange(-0.8, 1.0);
 		
 		fourbarSetpoint = 0;
 		//fourbarMotionControl = new SnazzyMotionPlanner(0.0005, 0.0, 0.0, 0.0, 0.00000310,0.00000387, fourbarEncoder, fourbarOutput, 0.005, "FourbarMotion.csv");
@@ -339,9 +339,15 @@ public class Robot extends IterativeRobot {
 		leftControl.reset();
 		rightControl.reset();
 		
+		lIntakeSetpoint = start;
+		leftIntakeControl.setSetpoint(start);
+		rIntakeSetpoint = start;
+		rightIntakeControl.setSetpoint(start);
+		
 		enableMechanismPIDs();
 		
 		driveSolenoid.set(lowGear);
+		
 		
 		((Autonomous) autonomousChooser.getSelected()).init();
 		
@@ -363,7 +369,6 @@ public class Robot extends IterativeRobot {
 
 	@Override
 	public void teleopPeriodic() {
-		
 		
 		calibrate = false;
 		pidTune = false;
@@ -423,18 +428,23 @@ public class Robot extends IterativeRobot {
 				lastTimes.remove(0);
 			}
 			
-			if((driveStick.getPOV() == 0 || operatorStick.getPOV() == 0) && fourbarSetpoint <60000 && fourbarIsSafe(fourbarSetpoint+800)) {
-				fourbarSetpoint += 800;
+			if((driveStick.getPOV() == 0 || operatorStick.getPOV() == 0) && fourbarSetpoint <60000 && fourbarIsSafe(fourbarSetpoint+upStep)) {
+				fourbarSetpoint += upStep;
 			}
-			if((driveStick.getPOV()== 0 || operatorStick.getPOV() == 0) && fourbarSetpoint <60000 && !fourbarIsSafe(fourbarSetpoint+800)) {
+			if((driveStick.getPOV()== 0 || operatorStick.getPOV() == 0) && fourbarSetpoint <60000 && !fourbarIsSafe(fourbarSetpoint+upStep)) {
 				goinUp = true;
 			}else {
 				goinUp = false;
 			}
-			if((driveStick.getPOV()== 180 || operatorStick.getPOV()== 180) && fourbarSetpoint > 0 && fourbarIsSafe(fourbarSetpoint-400)) {
-				fourbarSetpoint -= 400;
+			if((driveStick.getPOV()== 180 || operatorStick.getPOV()== 180) && fourbarSetpoint > 0 && fourbarIsSafe(fourbarSetpoint-downStep)) {
+				System.out.println(fourbarEncoder.get()-fourbarSetpoint);
+				if(fourbarSetpoint < fourbarLastBit) {
+					fourbarSetpoint -= downStep/2;
+				} else {
+				fourbarSetpoint -= downStep;
+				}
 			} 
-			if((driveStick.getPOV()== 180 || operatorStick.getPOV()== 180) && fourbarSetpoint > 0 && !fourbarIsSafe(fourbarSetpoint-400)) {
+			if((driveStick.getPOV()== 180 || operatorStick.getPOV()== 180) && fourbarSetpoint > 0 && !fourbarIsSafe(fourbarSetpoint-downStep)) {
 				goinDown = true;
 			}else {
 				goinDown = false;
@@ -443,7 +453,7 @@ public class Robot extends IterativeRobot {
 			SmartDashboard.putNumber("Setpoint", fourbarSetpoint);
 			fourbarPIDControl.setSetpoint(fourbarSetpoint);
 			
-			if((lElbowEncoder.get()<=(-lStow + 5) && rElbowEncoder.get()>=(rStow-5) && fourbarEncoder.get()<= 500) || fourbarEncoder.get()>= 26000) {
+			if((lElbowEncoder.get()<=(-lStow + stowFudge) && rElbowEncoder.get()>=(rStow-stowFudge) && fourbarEncoder.get()<= 500) || fourbarEncoder.get()>= 26000) {
 				if(toggleIntakeDftButton.on()) {
 					stowDelay = 0.0;
 					if(intakeOpenButton.held() && !intakeOutButton.held()) {
@@ -580,7 +590,7 @@ public class Robot extends IterativeRobot {
 			SmartDashboard.putString("Intake Setpoint", intakeIndicator);
 
 			
-			leftMotor1.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3) );
+			leftMotor1.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3));
 			leftMotor2.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3) );
 			rightMotor3.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 3));
 			rightMotor4.set(ControlMode.PercentOutput, -Math.pow(driveStick.getRawAxis(3), 3));
