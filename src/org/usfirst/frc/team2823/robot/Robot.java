@@ -136,17 +136,17 @@ public class Robot extends IterativeRobot {
 	
 	TrajectoryPlanner driveForwardTraj;
 	
-	double[][] rightSwitchAutoPlan = {{0,0,0},{120, -72, 0}};
-	double[][] rightSwitchBackPlan = {{20, 10, 0}, {120, -72, 0}};
+	double[][] rightSwitchAutoPlan = {{0,0,0},{100.5, -54.25 - 8, 0}};
+	double[][] rightSwitchBackPlan = {{20, 5.25, 0}, {100.5, -54.25 - 8, 0}};
 	
-	double[][] leftSwitchAutoPlan = {{0,0,0},{120, 72, 0}};
-	double[][] leftSwitchBackPlan = {{20, -10, 0}, {120, 72, 0}};
+	double[][] leftSwitchAutoPlan = {{0,0,0},{100.5, 64.75 + 12, 0}};
+	double[][] leftSwitchBackPlan = {{20, 5.25 + 5, 0}, {100.5, 64.75 + 12, 0}};
 	
-	double[][] switchGrabCubePlan = {{0,0,0}, {70, 0, 0}};
+	double[][] switchGrabCubePlan = {{0,0,0}, {38.5 + 6, 0, 0}};
 	
 	double[][] rightScaleAutoPlan = {{0,0,0},{60, 0, 0},{120,-60, -90}};
 	
-	double[][] driveForwardPlan = {{0,0,0}, {60, 0, 0}};
+	double[][] driveForwardPlan = {{0,0,0}, {90, 0, 0}};
 
 	boolean calibrate = false;
 	boolean pidTune = false;

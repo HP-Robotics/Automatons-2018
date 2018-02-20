@@ -18,7 +18,8 @@ public class SwitchAuto extends Autonomous {
 				new BlueprintStep(5.0, this::backStart, this::backPeriodic),
 				new BlueprintStep(4.0, this::forwardStart, this::forwardPeriodic),
 				new BlueprintStep(1.5, this::waitStart, this::waitPeriodic),
-				new BlueprintStep(1.0, this::clampStart, this::clampPeriodic)};
+				new BlueprintStep(1.0, this::clampStart, this::clampPeriodic)
+				};
 		setBlueprints(blueprints);
 		
 		start();

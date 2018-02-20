@@ -1,7 +1,4 @@
 - Camera
-- Four bar up and down set points
--Move forward auto
--Check letters b4 go in auto
--Why are we stowing in auto?
 - Better smart dashboard?
-- Adjust up/down speed on fourbar?
+-Correct Dimensions for switch Auto
+- Get higher fourbar range
