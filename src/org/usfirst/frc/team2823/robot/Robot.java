@@ -684,6 +684,8 @@ public class Robot extends IterativeRobot {
 	public void pidTune() {
 		testButton.update(driveStick.getRawButton(1));
 		
+		driveSolenoid.set(highGear);
+		
 		leftPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		rightPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		//fourbarPIDControl.setPID(SmartDashboard.getNumber("P", 0),SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));

@@ -25,6 +25,8 @@ public class ScaleAuto extends Autonomous {
 		robot.driveSolenoid.set(robot.highGear);
 		
 		robot.leftControl.setkAkV(robot.highGearKA, robot.highGearKV);
+		robot.leftControl.setPID(0.2, 0.00003, 3.0);
+		robot.rightControl.setPID(0.2, 0.00003, 3.0);
 		robot.leftControl.configureTrajectory(robot.scaleStartAutoTraj.getLeftTrajectory(), false);
 		robot.rightControl.configureTrajectory(robot.scaleStartAutoTraj.getRightTrajectory(), false);
 		
@@ -50,6 +52,8 @@ public class ScaleAuto extends Autonomous {
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		robot.driveSolenoid.set(robot.lowGear);
 		robot.leftControl.setkAkV(robot.lowGearKA, robot.lowGearKV);
+		robot.leftControl.setPID(0.1, 0.001, 0.75);
+		robot.rightControl.setPID(0.1, 0.001, 0.75);
 		
 		if(gameData.length() > 0)
 		{
@@ -96,6 +100,8 @@ public class ScaleAuto extends Autonomous {
 			else {
 				robot.driveSolenoid.set(robot.highGear);
 				robot.leftControl.setkAkV(robot.highGearKA, robot.highGearKV);
+				robot.leftControl.setPID(0.2, 0.00003, 3.0);
+				robot.rightControl.setPID(0.2, 0.00003, 3.0);
 				robot.leftControl.configureTrajectory(robot.rightScaleMidTraj.getLeftTrajectory(), false);
 				robot.rightControl.configureTrajectory(robot.rightScaleMidTraj.getRightTrajectory(), false);
 				robot.leftControl.enable();
@@ -132,6 +138,9 @@ public class ScaleAuto extends Autonomous {
 			else {
 				robot.driveSolenoid.set(robot.lowGear);
 				robot.leftControl.setkAkV(robot.lowGearKA, robot.lowGearKV);
+				robot.leftControl.setPID(0.1, 0.001, 0.75);
+				robot.rightControl.setPID(0.1, 0.001, 0.75);
+				
 				robot.leftControl.configureTrajectory(robot.rightScaleEndTraj.getLeftTrajectory(), false);
 				robot.rightControl.configureTrajectory(robot.rightScaleEndTraj.getRightTrajectory(), false);
 				robot.leftControl.enable();
