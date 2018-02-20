@@ -56,6 +56,11 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 		m_kV = kV;
 		m_period = period;
 	}	 
+	
+	public void setkAkV (double ka, double kv) {
+		m_kA = ka;
+		m_kV = kv;
+	}
 	public void configureGoal(double goal, double max_v, double max_a, boolean dwell) {
 		m_motionPlanEnabled = true;
 		m_planFinished = false;

@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import jaci.pathfinder.Pathfinder;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -122,6 +123,11 @@ public class Robot extends IterativeRobot {
 	LeftDrivePIDOutput lDriveOutput;
 	RightDrivePIDOutput rDriveOutput;
 	
+	final double lowGearKA = 0.00246;
+	final double lowGearKV = 0.0103;
+	final double highGearKA = 0.00380;
+	final double highGearKV = 0.00623;
+	
 	LeftIntakeOutput lIntakeOutput;
 	RightIntakeOutput rIntakeOutput;
 	
@@ -132,7 +138,12 @@ public class Robot extends IterativeRobot {
 	
 	TrajectoryPlanner switchGrabCubeTraj;
 	
-	TrajectoryPlanner rightScaleAutoTraj;
+	TrajectoryPlanner scaleStartAutoTraj;
+	TrajectoryPlanner leftScaleEndTraj;
+	TrajectoryPlanner rightScaleFirstTurnTraj;
+	TrajectoryPlanner rightScaleMidTraj;
+	TrajectoryPlanner rightScaleEndTraj;
+
 	
 	TrajectoryPlanner driveForwardTraj;
 	
@@ -144,7 +155,11 @@ public class Robot extends IterativeRobot {
 	
 	double[][] switchGrabCubePlan = {{0,0,0}, {38.5 + 6, 0, 0}};
 	
-	double[][] rightScaleAutoPlan = {{0,0,0},{60, 0, 0},{120,-60, -90}};
+	double[][] scaleStartAutoPlan = {{0,0,0},{180, 0, 0}};
+	double[][] leftScaleEndPlan = {{180, 0,0},{260 + 15, -7.3 - 15, -45}};
+	double[][] rightScaleFirstTurnPlan = {{180, 0,0},{240, -60,-90}};
+	double[][] rightScaleMidPlan = {{240, -60,-90},{240, -120, -90}};
+	double[][] rightScaleEndPlan = {{240, -120, -90}, {260 + 15, -7.3-181+15, 45}};	
 	
 	double[][] driveForwardPlan = {{0,0,0}, {90, 0, 0}};
 
@@ -191,7 +206,7 @@ public class Robot extends IterativeRobot {
 		autonomousChooser.addDefault("Empty: Do Nothing", new EmptyAutonomous(this));
 		autonomousChooser.addObject("Drive Forward", new DriveForwardAuto(this));
 		autonomousChooser.addObject("Switch Auto", new SwitchAuto(this));
-		autonomousChooser.addObject("Scale Auto", new RightScaleAuto(this));
+		autonomousChooser.addObject("Scale Auto", new ScaleAuto(this));
 		autonomousChooser.addObject("Do a Spin", new SpinnyAuto(this));
 		SmartDashboard.putData("Autonomous Mode", autonomousChooser);
 		
@@ -287,14 +302,26 @@ public class Robot extends IterativeRobot {
 		switchGrabCubeTraj = new TrajectoryPlanner(switchGrabCubePlan, 100*0.5, 300, 300);
 		switchGrabCubeTraj.generate();
 		
-		rightScaleAutoTraj = new TrajectoryPlanner(rightScaleAutoPlan, 100, 300, 300);
-		rightScaleAutoTraj.generate();
+		scaleStartAutoTraj = new TrajectoryPlanner(scaleStartAutoPlan, 140, 600, 600);
+		scaleStartAutoTraj.generate();
+		
+		leftScaleEndTraj = new TrajectoryPlanner(leftScaleEndPlan, 100 *0.5, 300, 300);
+		leftScaleEndTraj.generate();
+		
+		rightScaleFirstTurnTraj = new TrajectoryPlanner(rightScaleFirstTurnPlan, 100 *0.5, 300, 300);
+		rightScaleFirstTurnTraj.generate();
+		
+		rightScaleMidTraj = new TrajectoryPlanner(rightScaleMidPlan, 140, 600, 600);
+		rightScaleMidTraj.generate();
+		
+		rightScaleEndTraj = new TrajectoryPlanner(rightScaleEndPlan, 100*0.5, 300, 300);
+		rightScaleEndTraj.generate();
 		
 		driveForwardTraj = new TrajectoryPlanner(driveForwardPlan, 100*0.5, 300, 300);
 		driveForwardTraj.generate();
 		
-		leftControl = new SnazzyMotionPlanner(0.1, 0.001, 0.75, 0, 0.00246, 0.0103,  leftInches, lDriveOutput, 0.005, "Left.csv");
-		rightControl= new SnazzyMotionPlanner(0.1, 0.001, 0.75, 0, 0.00246, 0.0103,  rightInches, rDriveOutput, 0.005,"Right.csv");
+		leftControl = new SnazzyMotionPlanner(0.1, 0.001, 0.75, 0, lowGearKA, lowGearKV,  leftInches, lDriveOutput, 0.005, "Left.csv");
+		rightControl= new SnazzyMotionPlanner(0.1, 0.001, 0.75, 0, lowGearKA, lowGearKV,  rightInches, rDriveOutput, 0.005,"Right.csv");
 		
 		leftPIDControl = new SnazzyPIDController(0.04, 0.001, 0.8, 0, leftInches, lDriveOutput, 0.005, "Left.csv");
 		rightPIDControl= new SnazzyPIDController(0.04, 0.001, 0.8, 0, rightInches, rDriveOutput, 0.005,"Right.csv");
@@ -364,7 +391,10 @@ public class Robot extends IterativeRobot {
 	
 	@Override
 	public void teleopInit() {
+		leftControl.disable();
+		rightControl.disable();
 		enableMechanismPIDs();
+		
 	}
 
 	@Override
