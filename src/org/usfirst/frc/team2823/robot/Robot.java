@@ -106,6 +106,7 @@ public class Robot extends IterativeRobot {
 	boolean goinDown = false;
 	boolean goinUp = false;
 	final double stowFudge = 10;
+	final double autoStowThreshold = 500;
 	String intakeIndicator = "Start";
 	
 	SnazzyPIDController fourbarPIDControl;
@@ -116,6 +117,8 @@ public class Robot extends IterativeRobot {
 	final double downStep = 1000.0;
 	final double upStep = 1000.0;
 	final double fourbarLastBit = downStep*8;
+	final double fourbarUpperLimit = 80000;
+	final double fourbarLowerLimit = 0;
 	
 	SnazzyMotionPlanner leftControl;
 	SnazzyMotionPlanner rightControl;
@@ -123,10 +126,16 @@ public class Robot extends IterativeRobot {
 	LeftDrivePIDOutput lDriveOutput;
 	RightDrivePIDOutput rDriveOutput;
 	
-	final double lowGearKA = 0.00246;
-	final double lowGearKV = 0.0103;
+	final double lowGearKA = 0.00246*1.15;
+	final double lowGearKV = 0.0108;
 	final double highGearKA = 0.00380;
 	final double highGearKV = 0.00623;
+	final double highGearP = 0.2;
+	final double highGearI = 0.00003;
+	final double highGearD = 3.0;
+	final double lowGearP = 0.3;
+	final double lowGearI = 0.005;
+	final double lowGearD = 1.0;
 	
 	LeftIntakeOutput lIntakeOutput;
 	RightIntakeOutput rIntakeOutput;
@@ -155,11 +164,11 @@ public class Robot extends IterativeRobot {
 	
 	double[][] switchGrabCubePlan = {{0,0,0}, {38.5 + 6, 0, 0}};
 	
-	double[][] scaleStartAutoPlan = {{0,0,0},{180, 0, 0}};
-	double[][] leftScaleEndPlan = {{180, 0,0},{260 + 15, -7.3 - 15, -45}};
-	double[][] rightScaleFirstTurnPlan = {{180, 0,0},{240, -60,-90}};
-	double[][] rightScaleMidPlan = {{240, -60,-90},{240, -120, -90}};
-	double[][] rightScaleEndPlan = {{240, -120, -90}, {260 + 15, -7.3-181+15, 45}};	
+	double[][] scaleStartAutoPlan = {{0,0,0},{160, 0, 0}};
+	double[][] leftScaleEndPlan = {{160, 0,0},{280 + 12, -10 - 12, -45}};
+	double[][] rightScaleFirstTurnPlan = {{160, 0,0},{220, -60,-90}};
+	double[][] rightScaleMidPlan = {{220, -60,-90},{220, -171, -90}};
+	double[][] rightScaleEndPlan = {{220, -120, -90}, {260 + 12, -25 + 12, 45}};	
 	
 	double[][] driveForwardPlan = {{0,0,0}, {90, 0, 0}};
 
@@ -255,14 +264,14 @@ public class Robot extends IterativeRobot {
 		rDriveEncoder = new Encoder(0, 1, true, Encoder.EncodingType.k4X);
 		rDriveEncoder.setDistancePerPulse(1);
 		
-		lElbowEncoder = new Encoder(4, 5, false, Encoder.EncodingType.k4X);
-		rElbowEncoder = new Encoder(6, 7, false, Encoder.EncodingType.k4X);
+		lElbowEncoder = new Encoder(22, 23, false, Encoder.EncodingType.k4X);
+		rElbowEncoder = new Encoder(16, 17, false, Encoder.EncodingType.k4X);
 		
 		leftInches = new DriveInchesPIDSource(lDriveEncoder);
 		rightInches = new DriveInchesPIDSource(rDriveEncoder);
 		
 		fourbarEncoder = new Encoder(8,9, true, Encoder.EncodingType.k4X);
-		elevatorEncoder = new Encoder( 10, 11, false, Encoder.EncodingType.k4X);
+		elevatorEncoder = new Encoder(6, 7, false, Encoder.EncodingType.k4X);
 
 		clamper = new DoubleSolenoid(0,1);
 		driveSolenoid = new DoubleSolenoid(2, 3);
@@ -320,8 +329,8 @@ public class Robot extends IterativeRobot {
 		driveForwardTraj = new TrajectoryPlanner(driveForwardPlan, 100*0.5, 300, 300);
 		driveForwardTraj.generate();
 		
-		leftControl = new SnazzyMotionPlanner(0.1, 0.001, 0.75, 0, lowGearKA, lowGearKV,  leftInches, lDriveOutput, 0.005, "Left.csv");
-		rightControl= new SnazzyMotionPlanner(0.1, 0.001, 0.75, 0, lowGearKA, lowGearKV,  rightInches, rDriveOutput, 0.005,"Right.csv");
+		leftControl = new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV,  leftInches, lDriveOutput, 0.005, "Left.csv");
+		rightControl= new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV,  rightInches, rDriveOutput, 0.005,"Right.csv");
 		
 		leftPIDControl = new SnazzyPIDController(0.04, 0.001, 0.8, 0, leftInches, lDriveOutput, 0.005, "Left.csv");
 		rightPIDControl= new SnazzyPIDController(0.04, 0.001, 0.8, 0, rightInches, rDriveOutput, 0.005,"Right.csv");
@@ -339,8 +348,8 @@ public class Robot extends IterativeRobot {
 		lIntakeSetpoint = start;
 		
 		SmartDashboard.putNumber("P", 0.01);
-		SmartDashboard.putNumber("I", 0.0);
-		SmartDashboard.putNumber("D", 0.0);
+		SmartDashboard.putNumber("I", 0.005);
+		SmartDashboard.putNumber("D", 1.0);
 		SmartDashboard.putNumber("Setpoint", 0);
 		SmartDashboard.putNumber("L Encoder", 0);
 		SmartDashboard.putNumber("R Encoder", 0);
@@ -431,7 +440,7 @@ public class Robot extends IterativeRobot {
 			if(!unClampButton.on()) {
 				clamper.set(clampIt);
 				clamped = true;
-				if(fourbarEncoder.get()<= 500 && unClampButton.changed()) {
+				if(fourbarEncoder.get()<= autoStowThreshold && unClampButton.changed()) {
 					toggleIntakeDftButton.reset();
 				}
 	
@@ -458,15 +467,15 @@ public class Robot extends IterativeRobot {
 				lastTimes.remove(0);
 			}
 			
-			if((driveStick.getPOV() == 0 || operatorStick.getPOV() == 0) && fourbarSetpoint <60000 && fourbarIsSafe(fourbarSetpoint+upStep)) {
+			if((driveStick.getPOV() == 0 || operatorStick.getPOV() == 0) && fourbarSetpoint <fourbarUpperLimit && fourbarIsSafe(fourbarSetpoint+upStep)) {
 				fourbarSetpoint += upStep;
 			}
-			if((driveStick.getPOV()== 0 || operatorStick.getPOV() == 0) && fourbarSetpoint <60000 && !fourbarIsSafe(fourbarSetpoint+upStep)) {
+			if((driveStick.getPOV()== 0 || operatorStick.getPOV() == 0) && fourbarSetpoint <fourbarUpperLimit && !fourbarIsSafe(fourbarSetpoint+upStep)) {
 				goinUp = true;
 			}else {
 				goinUp = false;
 			}
-			if((driveStick.getPOV()== 180 || operatorStick.getPOV()== 180) && fourbarSetpoint > 0 && fourbarIsSafe(fourbarSetpoint-downStep)) {
+			if((driveStick.getPOV()== 180 || operatorStick.getPOV()== 180) && fourbarSetpoint > fourbarLowerLimit && fourbarIsSafe(fourbarSetpoint-downStep)) {
 				System.out.println(fourbarEncoder.get()-fourbarSetpoint);
 				if(fourbarSetpoint < fourbarLastBit) {
 					fourbarSetpoint -= downStep/2;
@@ -474,7 +483,7 @@ public class Robot extends IterativeRobot {
 				fourbarSetpoint -= downStep;
 				}
 			} 
-			if((driveStick.getPOV()== 180 || operatorStick.getPOV()== 180) && fourbarSetpoint > 0 && !fourbarIsSafe(fourbarSetpoint-downStep)) {
+			if((driveStick.getPOV()== 180 || operatorStick.getPOV()== 180) && fourbarSetpoint >fourbarLowerLimit && !fourbarIsSafe(fourbarSetpoint-downStep)) {
 				goinDown = true;
 			}else {
 				goinDown = false;
@@ -653,7 +662,7 @@ public class Robot extends IterativeRobot {
 	
 	public void calibrateNow() {
 		testButton.update(driveStick.getRawButton(1));
-		driveSolenoid.set(highGear);
+		driveSolenoid.set(lowGear);
 		
 		if(testButton.on()){
 			if(testButton.changed()) {
@@ -684,10 +693,19 @@ public class Robot extends IterativeRobot {
 	public void pidTune() {
 		testButton.update(driveStick.getRawButton(1));
 		
-		driveSolenoid.set(highGear);
+		driveSolenoid.set(lowGear);
+		//driveSolenoid.set(highGear);
 		
-		leftPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
-		rightPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		leftControl.setkAkV(lowGearKA, lowGearKV);
+		rightControl.setkAkV(lowGearKA, lowGearKV);
+		
+		//leftControl.setkAkV(highGearKA, highGearKV);
+		//rightControl.setkAkV(highGearKA, highGearKV);
+		
+		leftControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		rightControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		//leftPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		//rightPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		//fourbarPIDControl.setPID(SmartDashboard.getNumber("P", 0),SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		//leftIntakeControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		//rightIntakeControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
@@ -701,8 +719,15 @@ public class Robot extends IterativeRobot {
 					
 					lElbowEncoder.reset();
 					
-					leftPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
-					leftPIDControl.enable();
+					//leftPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
+					//leftPIDControl.enable();
+					
+					//leftControl.configureTrajectory(driveForwardTraj.getLeftTrajectory(), false);
+					//rightControl.configureTrajectory(driveForwardTraj.getRightTrajectory(), false);
+					
+					leftControl.configureTrajectory(rightSwitchAutoTraj.getLeftTrajectory(), false);
+					rightControl.configureTrajectory(rightSwitchAutoTraj.getRightTrajectory(), false);
+
 					
 					//leftIntakeControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 					//leftIntakeControl.enable();
@@ -712,14 +737,18 @@ public class Robot extends IterativeRobot {
 					//fourbarPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 					//fourbarPIDControl.enable();
 					
-					rightPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
-					rightPIDControl.enable();
+					//rightPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
+					//rightPIDControl.enable();
+					leftControl.enable();
+					rightControl.enable();
 	
 				}
 				
 			}else if (testButton.changed()&& !testButton.on()){
-				leftPIDControl.disable();
-				rightPIDControl.disable();
+				//leftPIDControl.disable();
+				//rightPIDControl.disable();
+				leftControl.disable();
+				rightControl.disable();
 				//fourbarPIDControl.disable();
 				//leftIntakeControl.disable();
 				//rightIntakeControl.disable();
@@ -758,5 +787,17 @@ public class Robot extends IterativeRobot {
 		rightIntakeControl.disable();
 	}
 	
-	
+	public void configureToGear(DoubleSolenoid.Value gear) {
+		if(gear == lowGear) {
+			driveSolenoid.set(lowGear);
+			leftControl.setkAkV(lowGearKA, lowGearKV);
+			leftControl.setPID(lowGearP, lowGearI, lowGearD);
+			rightControl.setPID(lowGearP, lowGearI, lowGearD);
+		} else {
+			driveSolenoid.set(highGear);
+			leftControl.setkAkV(highGearKA, highGearKV);
+			leftControl.setPID(highGearP, highGearI, highGearD);
+			rightControl.setPID(highGearP, highGearI, highGearD);
+		}
+	}
 }
