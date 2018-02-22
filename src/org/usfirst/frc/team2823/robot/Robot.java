@@ -106,6 +106,7 @@ public class Robot extends IterativeRobot {
 	boolean goinDown = false;
 	boolean goinUp = false;
 	final double stowFudge = 10;
+	final double elbowFudge = 3;
 	final double autoStowThreshold = 500;
 	String intakeIndicator = "Start";
 	
@@ -119,6 +120,8 @@ public class Robot extends IterativeRobot {
 	final double fourbarLastBit = downStep*8;
 	final double fourbarUpperLimit = 80000;
 	final double fourbarLowerLimit = 0;
+	final double upperSafeZoneLimit = 26000;
+	final double lowerSafeZoneLimit = 500;
 	
 	SnazzyMotionPlanner leftControl;
 	SnazzyMotionPlanner rightControl;
@@ -277,7 +280,7 @@ public class Robot extends IterativeRobot {
 		driveSolenoid = new DoubleSolenoid(2, 3);
 		compressor = new Compressor(0);
 
-		driveSolenoid.set(lowGear);
+		driveSolenoid.set(highGear);
 		clamper.set(clampIt);
 
 		lDriveEncoder.reset();
@@ -449,8 +452,9 @@ public class Robot extends IterativeRobot {
 				clamper.set(unClampIt);
 				clamped = false;
 			}
-	
-			if(lLastDistances.size()==velocitySample && rLastDistances.size() == velocitySample ) {
+			
+			//Automatic Transmission
+			/*if(lLastDistances.size()==velocitySample && rLastDistances.size() == velocitySample ) {
 				velocity  = ((lCurrentDist-lLastDistances.get(0))/(currentTime-lastTimes.get(0))+(rCurrentDist-rLastDistances.get(0))/(currentTime-lastTimes.get(0)))/2;
 				if(Math.abs(velocity) >= transmissionUpper && driveSolenoid.get() == lowGear && !manual) {
 					driveSolenoid.set(highGear);
@@ -465,8 +469,9 @@ public class Robot extends IterativeRobot {
 				lLastDistances.remove(0);
 				rLastDistances.remove(0);
 				lastTimes.remove(0);
-			}
+			}*/
 			
+			//fourbar stuff
 			if((driveStick.getPOV() == 0 || operatorStick.getPOV() == 0) && fourbarSetpoint <fourbarUpperLimit && fourbarIsSafe(fourbarSetpoint+upStep)) {
 				fourbarSetpoint += upStep;
 			}
@@ -476,7 +481,6 @@ public class Robot extends IterativeRobot {
 				goinUp = false;
 			}
 			if((driveStick.getPOV()== 180 || operatorStick.getPOV()== 180) && fourbarSetpoint > fourbarLowerLimit && fourbarIsSafe(fourbarSetpoint-downStep)) {
-				System.out.println(fourbarEncoder.get()-fourbarSetpoint);
 				if(fourbarSetpoint < fourbarLastBit) {
 					fourbarSetpoint -= downStep/2;
 				} else {
@@ -492,7 +496,8 @@ public class Robot extends IterativeRobot {
 			SmartDashboard.putNumber("Setpoint", fourbarSetpoint);
 			fourbarPIDControl.setSetpoint(fourbarSetpoint);
 			
-			if((lElbowEncoder.get()<=(-lStow + stowFudge) && rElbowEncoder.get()>=(rStow-stowFudge) && fourbarEncoder.get()<= 500) || fourbarEncoder.get()>= 26000) {
+			//intake stuff
+			if((lElbowEncoder.get()<=(-lStow + stowFudge) && rElbowEncoder.get()>=(rStow-stowFudge) && fourbarEncoder.get()<= lowerSafeZoneLimit) || fourbarEncoder.get()>= upperSafeZoneLimit) {
 				if(toggleIntakeDftButton.on()) {
 					stowDelay = 0.0;
 					if(intakeOpenButton.held() && !intakeOutButton.held()) {
@@ -566,31 +571,14 @@ public class Robot extends IterativeRobot {
 			
 			rightIntakeControl.setSetpoint(rIntakeSetpoint);
 			
-			/*if(testButton.on()){
-				if(testButton.changed()) {
-					fourbarEncoder.reset();
-				
-					fourbarMotionControl.configureGoal(60000, 130000*0.5, 3000000*0.5, false);
-					
-				}
-				
-			}else if (testButton.changed()&& !testButton.on()){	
-				fourbarMotionControl.disable();
-				
-			}*/
 	
 			if (gearLowButton.held()) {
-				manual = true;
 				driveSolenoid.set(lowGear);
 				SmartDashboard.putString("Driving Gear", "Low");
 				
-			}else if (gearHighButton.held()) {
-				manual = true;
+			}else {
 				driveSolenoid.set(highGear);
 				SmartDashboard.putString("Driving Gear", "High");
-				
-			} else {
-				manual = false;
 			}
 			
 			SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
@@ -763,13 +751,13 @@ public class Robot extends IterativeRobot {
 	
 	public boolean fourbarIsSafe(double futureSetpoint) {
 		// 18000 safe for arm
-		if(futureSetpoint >= 26000) {
+		if(futureSetpoint >= upperSafeZoneLimit) {
 			return true;
 		}
-		if(Math.abs(lElbowEncoder.get()-start)<= 3 && Math.abs(rElbowEncoder.get()-start)<= 3) {
+		if(Math.abs(lElbowEncoder.get()-start)<= elbowFudge && Math.abs(rElbowEncoder.get()-start)<=  elbowFudge) {
 			return true;
 		}
-		if(Math.abs(Math.abs(lElbowEncoder.get())-clear)<= 3 && Math.abs(Math.abs(rElbowEncoder.get())-clear)<= 3) {
+		if(Math.abs(Math.abs(lElbowEncoder.get())-clear)<= elbowFudge && Math.abs(Math.abs(rElbowEncoder.get())-clear)<= elbowFudge) {
 			return true;
 		}
 		return false;
