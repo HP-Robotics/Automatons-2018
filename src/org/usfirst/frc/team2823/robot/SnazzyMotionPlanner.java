@@ -202,7 +202,6 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 	public void stopCalibration() {
 		m_calLog.close();
 		synchronized(this) {
-			System.out.println("BOOM stopCalibration");
 			m_pidOutput.pidWrite(0.0);
 			m_calibrating = false;
 		}
@@ -216,7 +215,6 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 			synchronized(this) {
 				m_planFinished = true;
 				if(!m_dwell) {
-					System.out.println("BOOM runPlan PIDWRITE 1");
 					m_pidOutput.pidWrite(0.0);
 					return;
 				}
@@ -228,7 +226,6 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 
 		synchronized(this) {
 			if(isEnabled()) {
-				System.out.println("BOOM runPlan PIDWRITE 2");
 				m_pidOutput.pidWrite(m_result);
 			}
 		}		  

@@ -2,3 +2,4 @@
 - Better smart dashboard?
 -Correct Dimensions for switch Auto
 - Get higher fourbar range
+- Reset elbow code - if arm is down flip all the way out and reset encoders, if arm is up flip all the way in and reset encoders

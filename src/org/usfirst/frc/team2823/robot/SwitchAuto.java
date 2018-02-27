@@ -13,7 +13,8 @@ public class SwitchAuto extends Autonomous {
 	
 	@Override
 	public void init() {
-		BlueprintStep[] blueprints = new BlueprintStep[] {new BlueprintStep(5.0, this::goStart, this::goPeriodic), 
+		BlueprintStep[] blueprints = new BlueprintStep[] {
+				new BlueprintStep(5.0, this::goStart, this::goPeriodic), 
 				new BlueprintStep(1.0, this::unClampStart, this::unClampPeriodic), 
 				new BlueprintStep(5.0, this::backStart, this::backPeriodic),
 				new BlueprintStep(4.0, this::forwardStart, this::forwardPeriodic),
