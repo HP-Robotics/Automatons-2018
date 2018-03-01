@@ -23,12 +23,24 @@ public class ScaleAuto extends Autonomous {
 	
 	public int goStart() {
 		robot.configureToGear(robot.highGear);
-		robot.leftControl.configureTrajectory(robot.scaleStartAutoTraj.getLeftTrajectory(), false);
-		robot.rightControl.configureTrajectory(robot.scaleStartAutoTraj.getRightTrajectory(), false);
+		String gameData;
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		
+		if(gameData.length() > 0)
+		{
+			if(gameData.charAt(1) == 'L')
+			{
+				robot.leftControl.configureTrajectory(robot.leftScaleStartTraj.getLeftTrajectory(), false);
+				robot.rightControl.configureTrajectory(robot.leftScaleStartTraj.getRightTrajectory(), false);
+				
+			}
+			else {
+				robot.leftControl.configureTrajectory(robot.rightScaleStartTraj.getLeftTrajectory(), false);
+				robot.rightControl.configureTrajectory(robot.rightScaleStartTraj.getRightTrajectory(), false);
+			}
+		}
 		robot.leftControl.enable();
 		robot.rightControl.enable();
-
 		return 0;
 	}
 	

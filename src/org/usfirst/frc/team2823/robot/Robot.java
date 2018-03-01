@@ -153,14 +153,19 @@ public class Robot extends IterativeRobot {
 	
 	TrajectoryPlanner switchGrabCubeTraj;
 	
-	TrajectoryPlanner scaleStartAutoTraj;
+	TrajectoryPlanner leftScaleStartTraj;
 	TrajectoryPlanner leftScaleEndTraj;
+	
+	TrajectoryPlanner rightScaleStartTraj;
 	TrajectoryPlanner rightScaleFirstTurnTraj;
 	TrajectoryPlanner rightScaleMidTraj;
 	TrajectoryPlanner rightScaleEndTraj;
 
 	
 	TrajectoryPlanner driveForwardTraj;
+	
+	final double FASTTOSLOW = 9.8;
+	final double SLOWTOFAST = 29;
 	
 	double[][] rightSwitchAutoPlan = {{0,0,0},{100.5, -54.25 - 8, 0}};
 	double[][] rightSwitchBackPlan = {{20, 5.25, 0}, {100.5, -54.25 - 8, 0}};
@@ -170,11 +175,13 @@ public class Robot extends IterativeRobot {
 	
 	double[][] switchGrabCubePlan = {{0,0,0}, {38.5 + 6, 0, 0}};
 	
-	double[][] scaleStartAutoPlan = {{0,0,0},{160, 0, 0}};
-	double[][] leftScaleEndPlan = {{160, 0,0},{280 + 12, -10 - 12, -45}};
-	double[][] rightScaleFirstTurnPlan = {{160, 0,0},{220, -60,-90}};
-	double[][] rightScaleMidPlan = {{220, -60,-90},{220, -171, -90}};
-	double[][] rightScaleEndPlan = {{220, -120, -90}, {260 + 12, -25 + 12, 45}};	
+	double[][] leftScaleStartPlan = {{0,0,0},{160, 0, 0}};
+	double[][] leftScaleEndPlan = {{160, 0,0},{260 + 12, -10 - 12, -45}};
+	
+	double[][] rightScaleStartPlan = {{0,0,0}, {160 + FASTTOSLOW, 0, 0}};
+	double[][] rightScaleFirstTurnPlan = {{160-SLOWTOFAST, 0,0},{160, 0, 0}, {220, -60,-90}, {220, -60-SLOWTOFAST,-90}};
+	double[][] rightScaleMidPlan = {{220, -60 + FASTTOSLOW, -90},{220, -171- FASTTOSLOW, -90}};
+	double[][] rightScaleEndPlan = {{220, -171+SLOWTOFAST, -90},{220, -171, -90}, {260 + 12, -222.74 +12, 45}};	
 	
 	double[][] driveForwardPlan = {{0,0,0}, {90, 0, 0}};
 
@@ -322,11 +329,14 @@ public class Robot extends IterativeRobot {
 		switchGrabCubeTraj = new TrajectoryPlanner(switchGrabCubePlan, 100*0.5, 300, 300);
 		switchGrabCubeTraj.generate();
 		
-		scaleStartAutoTraj = new TrajectoryPlanner(scaleStartAutoPlan, 140, 600, 600);
-		scaleStartAutoTraj.generate();
+		leftScaleStartTraj = new TrajectoryPlanner(leftScaleStartPlan, 140, 600, 600);
+		leftScaleStartTraj.generate();
 		
 		leftScaleEndTraj = new TrajectoryPlanner(leftScaleEndPlan, 100 *0.5, 300, 300);
 		leftScaleEndTraj.generate();
+		
+		rightScaleStartTraj = new TrajectoryPlanner(rightScaleStartPlan, 140, 600, 600);
+		rightScaleStartTraj.generate();
 		
 		rightScaleFirstTurnTraj = new TrajectoryPlanner(rightScaleFirstTurnPlan, 100 *0.5, 300, 300);
 		rightScaleFirstTurnTraj.generate();
