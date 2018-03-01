@@ -56,6 +56,7 @@ public class Robot extends IterativeRobot {
 	Button unClampButton;
 	Button gearHighButton;
 	Button gearLowButton;
+	Button toggleShiftMode;
 	
 	Button testButton;
 	Button elbowResetButton;
@@ -258,6 +259,7 @@ public class Robot extends IterativeRobot {
 		unClampButton = new Button();
 		gearHighButton = new Button();
 		gearLowButton = new Button();
+		toggleShiftMode = new Button();
 		
 		testButton = new Button();
 		elbowResetButton = new Button();
@@ -390,6 +392,7 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Fourbar", 0);
 		SmartDashboard.putNumber("Elevator", 0);
 		SmartDashboard.putString("Clamped?", "Not Clamped");
+		SmartDashboard.putString("ShiftMode", "Automatic");
 		
 	}
 
@@ -444,9 +447,10 @@ public class Robot extends IterativeRobot {
 		pidTune = false;
 		
 		if(!calibrate && !pidTune) {			
-			gearLowButton.update(driveStick.getRawButton(leftTrigger) || operatorStick.getRawButton(leftTrigger));
-			gearHighButton.update(driveStick.getRawButton(leftBumper) || operatorStick.getRawButton(leftBumper));
+			gearLowButton.update(driveStick.getRawButton(leftTrigger) );
+			gearHighButton.update(driveStick.getRawButton(leftBumper) );
 			intakeOpenButton.update(operatorStick.getRawButton(rightBumper));
+			toggleShiftMode.update(driveStick.getRawButton(rightBumper));
 			toggleIntakeDftButton.update(operatorStick.getRawButton(yButton));
 			intakeOutButton.update(operatorStick.getRawButton(rightTrigger));
 			unClampButton.update(operatorStick.getRawButton(bButton));
@@ -488,8 +492,16 @@ public class Robot extends IterativeRobot {
 				clamped = false;
 			}
 			
+			if(toggleShiftMode.on()) {
+				manual = true;
+				SmartDashboard.putString("ShiftMode", "Manual");
+			} else {
+				manual = false;
+				SmartDashboard.putString("ShiftMode", "Automatic");
+			}
+			
 			//Automatic Transmission
-			/*if(lLastDistances.size()==velocitySample && rLastDistances.size() == velocitySample ) {
+			if(lLastDistances.size()==velocitySample && rLastDistances.size() == velocitySample ) {
 				velocity  = ((lCurrentDist-lLastDistances.get(0))/(currentTime-lastTimes.get(0))+(rCurrentDist-rLastDistances.get(0))/(currentTime-lastTimes.get(0)))/2;
 				if(Math.abs(velocity) >= transmissionUpper && driveSolenoid.get() == lowGear && !manual) {
 					driveSolenoid.set(highGear);
@@ -504,7 +516,18 @@ public class Robot extends IterativeRobot {
 				lLastDistances.remove(0);
 				rLastDistances.remove(0);
 				lastTimes.remove(0);
-			}*/
+			}
+			
+			if(manual) {
+				if (gearLowButton.held()) {
+					driveSolenoid.set(lowGear);
+					SmartDashboard.putString("Driving Gear", "Low");
+					
+				}else {
+					driveSolenoid.set(highGear);
+					SmartDashboard.putString("Driving Gear", "High");
+				}
+			}
 			
 			//fourbar stuff
 			if((driveStick.getPOV() == 0 || operatorStick.getPOV() == 0) && fourbarSetpoint <fourbarUpperLimit && fourbarIsSafe(fourbarSetpoint+upStep)) {
@@ -607,15 +630,7 @@ public class Robot extends IterativeRobot {
 			rightIntakeControl.setSetpoint(rIntakeSetpoint - resetOffset);
 			
 	
-			if (gearLowButton.held()) {
-				driveSolenoid.set(lowGear);
-				SmartDashboard.putString("Driving Gear", "Low");
-				
-			}else {
-				driveSolenoid.set(highGear);
-				SmartDashboard.putString("Driving Gear", "High");
-			}
-			
+						
 			SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
 			SmartDashboard.putNumber("R Encoder", rightInches.pidGet());
 			SmartDashboard.putNumber("L Elbow", getLElbow());
@@ -648,7 +663,6 @@ public class Robot extends IterativeRobot {
 				SmartDashboard.putString("Clamped?", "Not Clamped");
 
 			}
-					
 					
 			SmartDashboard.putString("Intake Setpoint", intakeIndicator);
 
