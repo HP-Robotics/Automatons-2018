@@ -5,4 +5,7 @@
 - Elevator control buttons and PID
 - Nanny Mode Button if Elevator is up and option to turn off
 - Toggle to turn on Automatic Transmission
-- Flesh out scale auto
+- Flesh out scale auto?
+- Team Update 14
+- Program roborio
+- Tune high gear PID
