@@ -204,6 +204,7 @@ public class Robot extends IterativeRobot {
 	boolean pidTune = false;
 	
 	boolean clamped = false;
+	boolean gotReset = false;
 	
 	SendableChooser<Autonomous> autonomousChooser;
 	
@@ -487,14 +488,16 @@ public class Robot extends IterativeRobot {
 			if(!unClampButton.on()) {
 				clamper.set(clampIt);
 				clamped = true;
-				if(fourbarEncoder.get() >= upperSafeZoneLimit && unClampButton.changed()) {
+				if(fourbarEncoder.get() >= upperSafeZoneLimit && !gotReset) {
 					toggleIntakeDftButton.reset();
+					gotReset = true;
 				}
 	
 				
 			}else if(unClampButton.on()) {
 				clamper.set(unClampIt);
 				clamped = false;
+				gotReset = false;
 			}
 			
 			if(toggleShiftMode.on()) {

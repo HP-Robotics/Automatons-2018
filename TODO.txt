@@ -1,7 +1,6 @@
-- Check fudges on switch auto
-- Get higher fourbar range
-- TUNE -Reset elbow code
-- Elevator control buttons and PID
+- [TEST] Nanny change
+- disable open from stow
+- fix camera
 - Nanny Mode Button if Elevator is up and option to turn off
 - Flesh out scale auto?
 - Tune high gear PID
