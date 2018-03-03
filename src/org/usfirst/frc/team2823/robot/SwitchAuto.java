@@ -13,6 +13,7 @@ public class SwitchAuto extends Autonomous {
 	
 	@Override
 	public void init() {
+		
 		BlueprintStep[] blueprints = new BlueprintStep[] {
 				new BlueprintStep(5.0, this::goStart, this::goPeriodic), 
 				new BlueprintStep(1.0, this::unClampStart, this::unClampPeriodic), 
@@ -33,9 +34,7 @@ public class SwitchAuto extends Autonomous {
 		robot.fourbarPIDControl.setSetpoint(50000);
 		robot.fourbarPIDControl.enable();
 		
-		if(gameData.length() > 0)
-		{
-			if(gameData.charAt(0) == 'L')
+			if(gameData.length() >0 && gameData.charAt(0) == 'L' )
 			{
 
 				robot.leftControl.configureTrajectory(robot.leftSwitchAutoTraj.getLeftTrajectory(), false);
@@ -46,11 +45,10 @@ public class SwitchAuto extends Autonomous {
 				robot.rightControl.configureTrajectory(robot.rightSwitchAutoTraj.getRightTrajectory(), false);
 			}
 
-
+			
 			robot.leftControl.enable();
 			robot.rightControl.enable();
 			
-		}
 		return 0;
 	}
 	
@@ -88,6 +86,8 @@ public class SwitchAuto extends Autonomous {
 			robot.leftControl.enable();
 			robot.rightControl.enable();
 			
+		} else {
+			nextStage();
 		}
 		
 		
@@ -133,7 +133,13 @@ public class SwitchAuto extends Autonomous {
 
 	
 	public int unClampStart() {
-		robot.clamper.set(robot.unClampIt);
+		String gameData;
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		if(gameData.length()>0) {
+			robot.clamper.set(robot.unClampIt);
+		} else {
+			nextStage();
+		}
 		return 0;
 	}
 	
@@ -143,22 +149,29 @@ public class SwitchAuto extends Autonomous {
 	}
 	
 	public int forwardStart() {
-		robot.rIntakeSetpoint = robot.open;
-		robot.rightIntakeControl.setSetpoint(robot.rIntakeSetpoint);
+		String gameData;
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		
-		robot.lIntakeSetpoint = robot.open;
-		robot.leftIntakeControl.setSetpoint(-robot.lIntakeSetpoint);
-		
-		robot.leftBelt.set(ControlMode.PercentOutput, -1.0);
-		robot.rightBelt.set(ControlMode.PercentOutput, 1.0);
-		
-		robot.clamper.set(robot.unClampIt);
-		
-		robot.leftControl.configureTrajectory(robot.switchGrabCubeTraj.getLeftTrajectory(), false);
-		robot.rightControl.configureTrajectory(robot.switchGrabCubeTraj.getRightTrajectory(), false);
-		
-		robot.leftControl.enable();
-		robot.rightControl.enable();
+		if(gameData.length()>0) {
+			robot.rIntakeSetpoint = robot.open;
+			robot.rightIntakeControl.setSetpoint(robot.rIntakeSetpoint);
+			
+			robot.lIntakeSetpoint = robot.open;
+			robot.leftIntakeControl.setSetpoint(-robot.lIntakeSetpoint);
+			
+			robot.leftBelt.set(ControlMode.PercentOutput, robot.lBeltSpeed);
+			robot.rightBelt.set(ControlMode.PercentOutput, robot.rBeltSpeed);
+			
+			robot.clamper.set(robot.unClampIt);
+			
+			robot.leftControl.configureTrajectory(robot.switchGrabCubeTraj.getLeftTrajectory(), false);
+			robot.rightControl.configureTrajectory(robot.switchGrabCubeTraj.getRightTrajectory(), false);
+			
+			robot.leftControl.enable();
+			robot.rightControl.enable();
+		} else {
+			nextStage();
+		}
 		return 0;
 	}
 	
@@ -188,9 +201,14 @@ public class SwitchAuto extends Autonomous {
 	}
 	
 	public int clampStart() {
-		robot.clamper.set(robot.clampIt);
-		robot.leftBelt.set(ControlMode.PercentOutput, 0.0);
-		robot.rightBelt.set(ControlMode.PercentOutput, 0.0);
+		String gameData;
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		
+		if(gameData.length()>0) {
+			robot.clamper.set(robot.clampIt);
+			robot.leftBelt.set(ControlMode.PercentOutput, 0.0);
+			robot.rightBelt.set(ControlMode.PercentOutput, 0.0);
+		}
 		return 0;
 	}
 	

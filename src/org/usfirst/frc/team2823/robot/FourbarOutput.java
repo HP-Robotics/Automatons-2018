@@ -15,7 +15,7 @@ public class FourbarOutput implements PIDOutput {
 	@Override
 	public void pidWrite(double output) {
 		// TODO Auto-generated method stub
-		r.fourbarMotor.set(ControlMode.PercentOutput, output);
+		r.fourbarMotor.set(ControlMode.PercentOutput, -output);
 		
 	}
 

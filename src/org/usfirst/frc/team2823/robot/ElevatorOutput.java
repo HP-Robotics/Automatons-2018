@@ -15,7 +15,7 @@ public class ElevatorOutput implements PIDOutput {
 	@Override
 	public void pidWrite(double output) {
 		// TODO Auto-generated method stub
-		r.elevatorMotor.set(ControlMode.PercentOutput, output);
+		r.elevatorMotor.set(ControlMode.PercentOutput, -output);
 		
 	}
 

@@ -21,7 +21,7 @@ public class ScaleAuto extends Autonomous {
 		start();
 	}
 	
-	public int goStart() {
+	public int goStart() { 
 		robot.configureToGear(robot.highGear);
 		String gameData;
 		gameData = DriverStation.getInstance().getGameSpecificMessage();

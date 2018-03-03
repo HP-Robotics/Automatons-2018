@@ -43,5 +43,16 @@ public class Button {
 		ls = false;
 		c = false;
 	}
+	
+	public void set() {
+		s = true;
+		ls = true;
+		c = true;
+	}
+	
+	public boolean getLS() {
+		return ls;
+	}
+	
 
 }
