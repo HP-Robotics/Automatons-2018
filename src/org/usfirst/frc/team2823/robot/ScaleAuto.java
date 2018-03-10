@@ -12,9 +12,13 @@ public class ScaleAuto extends Autonomous {
 	public void init() {
 		BlueprintStep[] blueprints = new BlueprintStep[] {
 		new BlueprintStep(15.0, this::goStart, this::goPeriodic),
+		new BlueprintStep(3.0, this::elevatorUpStart, this::elevatorUpPeriodic),
 		new BlueprintStep(15.0, this::firstTurnStart, this::firstTurnPeriodic),
-		new BlueprintStep(15.0, this::secondGoStart, this::secondGoPeriodic),
-		new BlueprintStep(15.0, this::lastTurnStart, this::lastTurnPeriodic),
+		//new BlueprintStep(15.0, this::secondGoStart, this::secondGoPeriodic),
+		//new BlueprintStep(15.0, this::lastTurnStart, this::lastTurnPeriodic),
+		new BlueprintStep(2.0, this::unclampStart, this::unclampPeriodic),
+		new BlueprintStep(15.0, this::backUpStart, this::backUpPeriodic),
+		new BlueprintStep(15.0, this::bringDownStart, this::bringDownPeriodic),
 		};
 		setBlueprints(blueprints);
 		
@@ -25,6 +29,9 @@ public class ScaleAuto extends Autonomous {
 		robot.configureToGear(robot.highGear);
 		String gameData;
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		
+		robot.fourbarPIDControl.setSetpoint(90000);
+		robot.fourbarPIDControl.enable();
 		
 		if(gameData.length() > 0)
 		{
@@ -55,24 +62,30 @@ public class ScaleAuto extends Autonomous {
 		return 0;
 	}
 	
-	public int firstTurnStart() {
+	public int elevatorUpStart() {
 		String gameData;
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		robot.configureToGear(robot.lowGear);
 		
-		if(gameData.length() > 0)
+		if(gameData.length() == 0 || gameData.charAt(1)!= 'L')
 		{
-			if(gameData.charAt(1) == 'L')
-			{
-				robot.leftControl.configureTrajectory(robot.leftScaleEndTraj.getLeftTrajectory(), false);
-				robot.rightControl.configureTrajectory(robot.leftScaleEndTraj.getRightTrajectory(), false);
-				
-			}
-			else {
-				robot.leftControl.configureTrajectory(robot.rightScaleFirstTurnTraj.getLeftTrajectory(), false);
-				robot.rightControl.configureTrajectory(robot.rightScaleFirstTurnTraj.getRightTrajectory(), false);
-			}
+			stopAll();
+			return 0;
 		}
+		
+		robot.elevatorPIDControl.setSetpoint(7800);
+		robot.elevatorPIDControl.enable();
+		return 0;
+	}
+	public int elevatorUpPeriodic() {
+		return 0;
+	}
+	
+	public int firstTurnStart() {
+		robot.leftControl.configureTrajectory(robot.leftScaleEndTraj.getLeftTrajectory(), false);
+		robot.rightControl.configureTrajectory(robot.leftScaleEndTraj.getRightTrajectory(), false);
+		
+
 		robot.leftControl.enable();
 		robot.rightControl.enable();
 		return 0;
@@ -160,4 +173,68 @@ public class ScaleAuto extends Autonomous {
 		}
 		return 0;
 	}
+	
+	public int unclampStart() {
+		String gameData;
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		if(gameData.length()>0) {
+			robot.clamper.set(robot.unClampIt);
+		} else {
+			nextStage();
+		}
+		return 0;
+	}
+	public int unclampPeriodic() {
+		nextStage();
+		return 0;
+	}
+	
+	public int backUpStart() {
+
+		robot.leftControl.configureGoal(-40, 50, 100);
+		robot.rightControl.configureGoal(-40, 50, 100);
+		
+		robot.leftControl.enable();
+		robot.rightControl.enable();
+
+		return 0;
+	}
+
+	public int backUpPeriodic() {
+		
+		if(timer.get() >0 && timer.get()<0.5) {
+			robot.rIntakeSetpoint = robot.clear;
+			robot.rightIntakeControl.setSetpoint(robot.rIntakeSetpoint);
+			robot.clamper.set(robot.clampIt);
+		}
+		if(timer.get()>0.5 && timer.get()<1.0) {
+			robot.lIntakeSetpoint = robot.clear;
+			robot.leftIntakeControl.setSetpoint(-robot.lIntakeSetpoint);
+		} 
+		if(robot.leftControl.isPlanFinished()&&robot.rightControl.isPlanFinished()) {
+			
+			robot.leftControl.reset();
+			robot.rightControl.reset();
+				
+			nextStage();
+		}
+		return 0;
+	}
+
+	public int bringDownStart() {
+		robot.fourbarSetpoint = robot.upperSafeZoneLimit;
+		robot.fourbarPIDControl.setSetpoint(robot.fourbarSetpoint);
+		robot.elevatorPIDControl.setSetpoint(0);
+		robot.elevatorPIDControl.enable();
+		return 0;
+	}
+	
+	public int bringDownPeriodic() {
+		if(robot.fourbarIsSafe(0) && timer.get()>1.0) {
+			robot.fourbarSetpoint = 0;
+			robot.fourbarPIDControl.setSetpoint(robot.fourbarSetpoint);
+		}
+		return 0;
+	}
+	
 }

@@ -16,6 +16,8 @@ import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import edu.wpi.cscore.UsbCamera;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
@@ -23,6 +25,7 @@ import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.interfaces.Potentiometer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import jaci.pathfinder.Pathfinder;
@@ -62,6 +65,7 @@ public class Robot extends IterativeRobot {
 	
 	Button testButton;
 	Button elbowResetButton;
+	Button nannyModeOffButton; 
 
 	TalonSRX leftMotor1;
 	TalonSRX leftMotor2;
@@ -72,6 +76,7 @@ public class Robot extends IterativeRobot {
 	VictorSPX rightElbow;
 	VictorSPX leftBelt;
 	VictorSPX rightBelt;
+	
 	
 	TalonSRX fourbarMotor;
 	VictorSPX elevatorMotor;
@@ -86,6 +91,11 @@ public class Robot extends IterativeRobot {
 	Encoder rElbowEncoder;
 	Encoder fourbarEncoder;
 	Encoder elevatorEncoder;
+	
+	Potentiometer rPot;
+	Potentiometer lPot;
+	AnalogInput ai1 = new AnalogInput(1);
+	AnalogInput ai0 = new AnalogInput(0);
 	
 	ADXRS450_Gyro gyro;
 	
@@ -116,6 +126,8 @@ public class Robot extends IterativeRobot {
 	String intakeIndicator = "Start";
 	double rResetOffset = 0.0;
 	double lResetOffset = 0.0;
+	double rPotStart = 0.0;
+	double lPotStart = 0.0;
 	
 	final double rBeltSpeed = 1.0;
 	final double lBeltSpeed = -1.0;
@@ -279,6 +291,7 @@ public class Robot extends IterativeRobot {
 		
 		testButton = new Button();
 		elbowResetButton = new Button();
+		nannyModeOffButton = new Button();
 		
 		leftMotor1 = new TalonSRX(1);
 		leftMotor2 = new TalonSRX(2);
@@ -308,6 +321,9 @@ public class Robot extends IterativeRobot {
 		
 		lElbowEncoder = new Encoder(4, 5, false, Encoder.EncodingType.k4X);
 		rElbowEncoder = new Encoder(16, 17, false, Encoder.EncodingType.k4X);
+		
+		rPot = new AnalogPotentiometer(ai1, 360, rPotStart);
+		lPot = new AnalogPotentiometer(ai0, 360, lPotStart);
 		
 		leftInches = new DriveInchesPIDSource(lDriveEncoder);
 		rightInches = new DriveInchesPIDSource(rDriveEncoder);
@@ -463,17 +479,18 @@ public class Robot extends IterativeRobot {
 		pidTune = false;
 		
 		if(!calibrate && !pidTune) {			
-			gearLowButton.update(driveStick.getRawButton(leftTrigger) );
-			gearHighButton.update(driveStick.getRawButton(leftBumper) );
-			intakeOpenButton.update(operatorStick.getRawButton(rightBumper));
+			gearLowButton.update(driveStick.getRawButton(leftTrigger));
+			gearHighButton.update(driveStick.getRawButton(leftBumper));
+			intakeOpenButton.update(operatorStick.getRawButton(rightBumper) || driveStick.getRawButton(rightBumper));
 			toggleShiftMode.update(driveStick.getRawButton(rightBumper));
-			toggleIntakeDftButton.update(operatorStick.getRawButton(yButton));
-			intakeOutButton.update(operatorStick.getRawButton(rightTrigger));
+			toggleIntakeDftButton.update(operatorStick.getRawButton(yButton)|| driveStick.getRawButton(yButton));
+			intakeOutButton.update(operatorStick.getRawButton(rightTrigger) || driveStick.getRawButton(rightTrigger));
 			unClampButton.update(operatorStick.getRawButton(bButton));
 			testButton.update(driveStick.getRawButton(1));
 			elbowResetButton.update(driveStick.getRawButton(startButton) || operatorStick.getRawButton(startButton));
 			elevatorUpButton.update(operatorStick.getRawButton(leftBumper));
 			elevatorDownButton.update(operatorStick.getRawButton(leftTrigger));
+			nannyModeOffButton.update(driveStick.getRawButton(13));
 		
 			
 			currentTime = Timer.getFPGATimestamp();
@@ -673,7 +690,12 @@ public class Robot extends IterativeRobot {
 				if(elevatorUpButton.changed()) {
 					elevatorPIDControl.setSetpoint(7800);
 					elevatorUp = true;
-					maxPow = 0.5;
+					if(!nannyModeOffButton.on()) {
+						maxPow = 0.5;
+					}else {
+						maxPow = 1.0;
+						
+					}
 				} 
 				if(elevatorDownButton.changed()) {
 					elevatorPIDControl.setSetpoint(0);

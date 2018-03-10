@@ -75,7 +75,10 @@ public class Autonomous {
 			end();
 		}
 	}
-
+	
+	public void stopAll() {
+		stage = stageData.length;
+	}
 	public void end() {
 		System.out.println("-----");
 		System.out.printf("Auto Finished:\tTotal Time: %f\n",Timer.getFPGATimestamp() - initTime);
@@ -88,16 +91,18 @@ public class Autonomous {
 		System.out.println("Override me!");
 	}
 
-	public void periodic() {		
+	public void periodic() {
+		int stageAtEntry = stage;
 		if(checkStageTimeout()) {
 			return;
 		}
-		if(!stageData[stage].entered) {
-			stageData[stage].blueprint.m_start.getAsInt();
-			stageData[stage].entered = true;
+		if(!stageData[stageAtEntry].entered) {
+			stageData[stageAtEntry].blueprint.m_start.getAsInt();
+			stageData[stageAtEntry].entered = true;
 		}
-
-		stageData[stage].blueprint.m_periodic.getAsInt();
+		
+		if(stage == stageAtEntry) {
+			stageData[stage].blueprint.m_periodic.getAsInt();	
+		}
 	}
-
 }
