@@ -128,6 +128,8 @@ public class Robot extends IterativeRobot {
 	double lResetOffset = 0.0;
 	double rPotStart = 0.0;
 	double lPotStart = 0.0;
+	double lElbowLimit = 352.0;
+	double rElbowLimit = 343.0;
 	
 	final double rBeltSpeed = 1.0;
 	final double lBeltSpeed = -1.0;
@@ -322,7 +324,7 @@ public class Robot extends IterativeRobot {
 		lElbowEncoder = new Encoder(4, 5, false, Encoder.EncodingType.k4X);
 		rElbowEncoder = new Encoder(16, 17, false, Encoder.EncodingType.k4X);
 		
-		rPot = new AnalogPotentiometer(ai1, 360, rPotStart);
+		//rPot = new AnalogPotentiometer(ai1, 360, rPotStart);
 		lPot = new AnalogPotentiometer(ai0, 360, lPotStart);
 		
 		leftInches = new DriveInchesPIDSource(lDriveEncoder);
@@ -411,14 +413,16 @@ public class Robot extends IterativeRobot {
 		rIntakeSetpoint = start;
 		lIntakeSetpoint = start;
 		
-		SmartDashboard.putNumber("P", 0.001);
+		SmartDashboard.putNumber("P", 0.05);
 		SmartDashboard.putNumber("I", 0.0);
 		SmartDashboard.putNumber("D", 0.0);
 		SmartDashboard.putNumber("Setpoint", 0);
 		SmartDashboard.putNumber("L Encoder", 0);
 		SmartDashboard.putNumber("R Encoder", 0);
-		SmartDashboard.putNumber("L Elbow", 0);
-		SmartDashboard.putNumber("R Elbow", 0);
+		SmartDashboard.putNumber("L Elbow Enc", 0);
+		SmartDashboard.putNumber("R Elbow Enc", 0);
+		SmartDashboard.putNumber("L Elbow Pot", 0);
+		SmartDashboard.putNumber("R Elbow Pot", 0);
 		SmartDashboard.putString("Driving Gear", "Low");
 		SmartDashboard.putString("Intake Setpoint", "Start");
 		SmartDashboard.putNumber("Fourbar", 0);
@@ -476,7 +480,7 @@ public class Robot extends IterativeRobot {
 	public void teleopPeriodic() {
 		
 		calibrate = false;
-		pidTune = false;
+		pidTune = true;
 		
 		if(!calibrate && !pidTune) {			
 			gearLowButton.update(driveStick.getRawButton(leftTrigger));
@@ -599,8 +603,8 @@ public class Robot extends IterativeRobot {
 				if(!leftIntakeControl.isEnable() && !elbowResetButton.held()) {
 					lElbowEncoder.reset();
 					rElbowEncoder.reset();
-					rResetOffset = 410.0;
-					lResetOffset = 421.0;
+					rResetOffset = rElbowLimit;
+					lResetOffset = lElbowLimit;
 					toggleIntakeDftButton.set();
 					
 					leftIntakeControl.enable();
@@ -707,8 +711,10 @@ public class Robot extends IterativeRobot {
 						
 			SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
 			SmartDashboard.putNumber("R Encoder", rightInches.pidGet());
-			SmartDashboard.putNumber("L Elbow", getLElbow());
-			SmartDashboard.putNumber("R Elbow", getRElbow());
+			SmartDashboard.putNumber("L Elbow Enc", getLElbow());
+			SmartDashboard.putNumber("R Elbow Enc", getRElbow());
+			SmartDashboard.putNumber("L Elbow Pot", lPot.get());
+			//SmartDashboard.putNumber("R Elbow Pot", rPot.get());
 			SmartDashboard.putNumber("Fourbar", fourbarEncoder.get());
 			SmartDashboard.putNumber("Elevator", elevatorEncoder.get());
 			
@@ -823,9 +829,9 @@ public class Robot extends IterativeRobot {
 		//leftPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		//rightPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		//fourbarPIDControl.setPID(SmartDashboard.getNumber("P", 0),SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
-		//leftIntakeControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
-		//rightIntakeControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
-		elevatorPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		leftIntakeControl.setPID(SmartDashboard.getNumber("P", 0.05), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		rightIntakeControl.setPID(SmartDashboard.getNumber("P", 0.05), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		//elevatorPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		
 		if(testButton.on()){
 				if(testButton.changed()) {
@@ -837,6 +843,7 @@ public class Robot extends IterativeRobot {
 					elevatorEncoder.reset();
 					
 					lElbowEncoder.reset();
+					rElbowEncoder.reset();
 					
 					//leftPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 					//leftPIDControl.enable();
@@ -850,8 +857,8 @@ public class Robot extends IterativeRobot {
 					
 					//leftIntakeControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 					//leftIntakeControl.enable();
-					//rightIntakeControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
-					//rightIntakeControl.enable();
+					rightIntakeControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
+					rightIntakeControl.enable();
 					
 					//fourbarPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 					//fourbarPIDControl.enable();
@@ -859,8 +866,8 @@ public class Robot extends IterativeRobot {
 					//rightPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 					//rightPIDControl.enable();
 					
-					elevatorPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
-					elevatorPIDControl.enable();
+					//elevatorPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
+					//elevatorPIDControl.enable();
 					System.out.println("enable");
 					
 					//leftControl.enable();
@@ -875,15 +882,17 @@ public class Robot extends IterativeRobot {
 				//rightControl.disable();
 				//fourbarPIDControl.disable();
 				//leftIntakeControl.disable();
-				//rightIntakeControl.disable();
-				elevatorPIDControl.disable();
+				rightIntakeControl.disable();
+				//elevatorPIDControl.disable();
 				
 			}
 		SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
 		SmartDashboard.putNumber("R Encoder", rightInches.pidGet());
 		SmartDashboard.putNumber("Fourbar", fourbarEncoder.get());
-		SmartDashboard.putNumber("L Elbow", getLElbow());
-		SmartDashboard.putNumber("R Elbow", getRElbow());
+		SmartDashboard.putNumber("L Elbow Enc", getLElbow());
+		SmartDashboard.putNumber("R Elbow Enc", getRElbow());
+		SmartDashboard.putNumber("L Elbow Pot", lPot.get());
+		//SmartDashboard.putNumber("R Elbow Pot", rPot.get());
 		SmartDashboard.putNumber("Elevator", elevatorEncoder.get());
 	}
 	

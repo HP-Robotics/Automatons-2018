@@ -1,3 +1,5 @@
 - Nanny Mode Button if Elevator is up and option to turn off
 - Flesh out scale auto?
 - Tune high gear PID
+-Use POT to reset elbow encoders
+- find equivalent values for pot and enc
