@@ -98,14 +98,14 @@ public class SwitchAuto extends Autonomous {
 	public int backPeriodic() {
 		
 		if(timer.get() >0.5 && timer.get()<1.0) {
-			robot.rIntakeSetpoint = robot.clear;
+			robot.rIntakeSetpoint = robot.rClear;
 			robot.rightIntakeControl.setSetpoint(robot.rIntakeSetpoint);
 			robot.clamper.set(robot.clampIt);
 			robot.fourbarSetpoint = 40000;
 			robot.fourbarPIDControl.setSetpoint(robot.fourbarSetpoint);
 		}
 		if(timer.get()>1.0 && timer.get()<1.5) {
-			robot.lIntakeSetpoint = robot.clear;
+			robot.lIntakeSetpoint = robot.lClear;
 			robot.leftIntakeControl.setSetpoint(-robot.lIntakeSetpoint);
 			robot.fourbarSetpoint = 30000;
 			robot.fourbarPIDControl.setSetpoint(robot.fourbarSetpoint);
@@ -153,10 +153,10 @@ public class SwitchAuto extends Autonomous {
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		
 		if(gameData.length()>0) {
-			robot.rIntakeSetpoint = robot.open;
+			robot.rIntakeSetpoint = robot.rOpen;
 			robot.rightIntakeControl.setSetpoint(robot.rIntakeSetpoint);
 			
-			robot.lIntakeSetpoint = robot.open;
+			robot.lIntakeSetpoint = robot.lOpen;
 			robot.leftIntakeControl.setSetpoint(-robot.lIntakeSetpoint);
 			
 			robot.leftBelt.set(ControlMode.PercentOutput, robot.lBeltSpeed);
@@ -178,10 +178,10 @@ public class SwitchAuto extends Autonomous {
 	public int forwardPeriodic() {
 		if(robot.leftControl.isPlanFinished()&&robot.rightControl.isPlanFinished()) {
 			
-			robot.rIntakeSetpoint = robot.grab;
+			robot.rIntakeSetpoint = robot.rGrab;
 			robot.rightIntakeControl.setSetpoint(robot.rIntakeSetpoint);
 			
-			robot.lIntakeSetpoint = robot.grab;
+			robot.lIntakeSetpoint = robot.lGrab;
 			robot.leftIntakeControl.setSetpoint(-robot.lIntakeSetpoint);
 			
 			robot.leftControl.reset();

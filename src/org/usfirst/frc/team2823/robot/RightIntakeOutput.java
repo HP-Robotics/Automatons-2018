@@ -13,7 +13,7 @@ public class RightIntakeOutput implements PIDOutput {
 	
 	@Override
 	public void pidWrite (double output) {
-		r.rightElbow.set(ControlMode.PercentOutput, output);
+		r.rightElbow.set(ControlMode.PercentOutput, -output);
 	}
 
 }

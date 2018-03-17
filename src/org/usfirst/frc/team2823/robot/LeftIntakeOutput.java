@@ -15,7 +15,7 @@ public class LeftIntakeOutput implements PIDOutput {
 	@Override
 	public void pidWrite(double output) {
 		// TODO Auto-generated method stub
-		r.leftElbow.set(ControlMode.PercentOutput, output);
+		r.leftElbow.set(ControlMode.PercentOutput, -output);
 		
 	}
 

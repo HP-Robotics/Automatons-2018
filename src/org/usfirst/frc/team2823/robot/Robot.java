@@ -77,8 +77,8 @@ public class Robot extends IterativeRobot {
 	VictorSPX leftBelt;
 	VictorSPX rightBelt;
 	
-	
-	TalonSRX fourbarMotor;
+	//TalonSRX fourbarMotor;
+	VictorSPX fourbarMotor;//OWEN CHANGED FROM TALONSRX TO VICTORSPX 3/17/18 FOR SHADOW ROBOT
 	VictorSPX elevatorMotor;
 
 	DoubleSolenoid clamper;
@@ -95,7 +95,7 @@ public class Robot extends IterativeRobot {
 	Potentiometer rPot;
 	Potentiometer lPot;
 	AnalogInput ai1 = new AnalogInput(1);
-	AnalogInput ai0 = new AnalogInput(0);
+	AnalogInput ai2 = new AnalogInput(2);
 	
 	ADXRS450_Gyro gyro;
 	
@@ -109,12 +109,16 @@ public class Robot extends IterativeRobot {
 	SnazzyPIDController leftIntakeControl;
 	SnazzyPIDController rightIntakeControl;
 	
-	final double lStow = 135.0;
-	final double rStow = 115.0;
-	final double open = 278.0;
-	final double grab = 230.0;
-	final double start = 0.0;
-	final double clear = 248.0;
+	final double lStow = 109.0;
+	final double rStow = 240.0;
+	final double lOpen = 220.0;
+	final double rOpen = 105.0;
+	final double lGrab = 184.0;
+	final double rGrab = 144.0;
+	final double lStart = 2.0;
+	final double rStart = 343.0;
+	final double lClear = 199.0;
+	final double rClear = 128.0;
 	double rIntakeSetpoint = 0.0;
 	double lIntakeSetpoint = 0.0;
 	double stowDelay = 0.0;
@@ -310,7 +314,8 @@ public class Robot extends IterativeRobot {
 		leftBelt = new VictorSPX(21);
 		rightBelt = new VictorSPX(22);
 		
-		fourbarMotor = new TalonSRX(31);
+		//fourbarMotor = new TalonSRX(31);	//OWEN CHANGED FROM TALONSPX TO VICTORSPX 3/17/18 FOR SHADOW ROBOT
+		fourbarMotor = new VictorSPX(31);
 		fourbarOutput = new FourbarOutput(this);
 		
 		elevatorMotor = new VictorSPX(41);	
@@ -324,8 +329,8 @@ public class Robot extends IterativeRobot {
 		lElbowEncoder = new Encoder(4, 5, false, Encoder.EncodingType.k4X);
 		rElbowEncoder = new Encoder(16, 17, false, Encoder.EncodingType.k4X);
 		
-		//rPot = new AnalogPotentiometer(ai1, 360, rPotStart);
-		lPot = new AnalogPotentiometer(ai0, 360, lPotStart);
+		lPot = new AnalogPotentiometer(ai2, 360, lPotStart);
+		rPot = new AnalogPotentiometer(ai1, 360, rPotStart);
 		
 		leftInches = new DriveInchesPIDSource(lDriveEncoder);
 		rightInches = new DriveInchesPIDSource(rDriveEncoder);
@@ -407,11 +412,11 @@ public class Robot extends IterativeRobot {
 		elevatorPIDControl = new SnazzyPIDController(0.005, 0, 0, 0, elevatorEncoder, elevatorOutput, 0.005, "ElevatorPID.csv");
 		//elevatorMotionControl = new SnazzyMotionPlanner(0, 0, 0, 0, 0, 0, elevatorEncoder, elevatorOutput, 0.005, "ElevatorMotion.csv");
 		
-		leftIntakeControl = new SnazzyPIDController(0.05, 0, 0, 0, lElbowEncoder, lIntakeOutput, 0.005, "leftIntake.csv");
-		rightIntakeControl = new SnazzyPIDController(0.05, 0, 0, 0, rElbowEncoder, rIntakeOutput, 0.005, "rightIntake.csv");
+		leftIntakeControl = new SnazzyPIDController(0.05, 0, 0, 0, lPot, lIntakeOutput, 0.005, "leftIntake.csv");
+		rightIntakeControl = new SnazzyPIDController(0.05, 0, 0, 0, rPot, rIntakeOutput, 0.005, "rightIntake.csv");
 		
-		rIntakeSetpoint = start;
-		lIntakeSetpoint = start;
+		rIntakeSetpoint = rStart;
+		lIntakeSetpoint = lStart;
 		
 		SmartDashboard.putNumber("P", 0.05);
 		SmartDashboard.putNumber("I", 0.0);
@@ -445,10 +450,10 @@ public class Robot extends IterativeRobot {
 		leftControl.reset();
 		rightControl.reset();
 		
-		lIntakeSetpoint = start;
-		leftIntakeControl.setSetpoint(start);
-		rIntakeSetpoint = start;
-		rightIntakeControl.setSetpoint(start);
+		lIntakeSetpoint = lStart;
+		leftIntakeControl.setSetpoint(lStart);
+		rIntakeSetpoint = rStart;
+		rightIntakeControl.setSetpoint(rStart);
 		
 		enableMechanismPIDs();
 		
@@ -480,13 +485,13 @@ public class Robot extends IterativeRobot {
 	public void teleopPeriodic() {
 		
 		calibrate = false;
-		pidTune = true;
+		pidTune = false;
 		
 		if(!calibrate && !pidTune) {			
 			gearLowButton.update(driveStick.getRawButton(leftTrigger));
 			gearHighButton.update(driveStick.getRawButton(leftBumper));
 			intakeOpenButton.update(operatorStick.getRawButton(rightBumper) || driveStick.getRawButton(rightBumper));
-			toggleShiftMode.update(driveStick.getRawButton(rightBumper));
+			toggleShiftMode.update(driveStick.getRawButton(12));
 			toggleIntakeDftButton.update(operatorStick.getRawButton(yButton)|| driveStick.getRawButton(yButton));
 			intakeOutButton.update(operatorStick.getRawButton(rightTrigger) || driveStick.getRawButton(rightTrigger));
 			unClampButton.update(operatorStick.getRawButton(bButton));
@@ -494,7 +499,7 @@ public class Robot extends IterativeRobot {
 			elbowResetButton.update(driveStick.getRawButton(startButton) || operatorStick.getRawButton(startButton));
 			elevatorUpButton.update(operatorStick.getRawButton(leftBumper));
 			elevatorDownButton.update(operatorStick.getRawButton(leftTrigger));
-			nannyModeOffButton.update(driveStick.getRawButton(13));
+			nannyModeOffButton.update(driveStick.getRawButton(11));
 		
 			
 			currentTime = Timer.getFPGATimestamp();
@@ -591,62 +596,41 @@ public class Robot extends IterativeRobot {
 			
 			//intake stuff
 			
-			if(fourbarEncoder.get() >= upperSafeZoneLimit || fourbarEncoder.get() <= lowerSafeZoneLimit ) {
-				if(elbowResetButton.held()) {
-					
-					leftIntakeControl.disable();
-					rightIntakeControl.disable();
-					leftElbow.set(ControlMode.PercentOutput, -0.5);
-					rightElbow.set(ControlMode.PercentOutput, 0.5);
-					
-				}
-				if(!leftIntakeControl.isEnable() && !elbowResetButton.held()) {
-					lElbowEncoder.reset();
-					rElbowEncoder.reset();
-					rResetOffset = rElbowLimit;
-					lResetOffset = lElbowLimit;
-					toggleIntakeDftButton.set();
-					
-					leftIntakeControl.enable();
-					rightIntakeControl.enable();
-					
-					
-				} 
-					
+			if(intakeOpenButton.changed()) {
+				toggleIntakeDftButton.set();
 			}
 			
-			
-			if(getLElbow()<=(-lStow + stowFudge) && getRElbow()>=(rStow-stowFudge) && fourbarEncoder.get()<= lowerSafeZoneLimit || fourbarEncoder.get()>= upperSafeZoneLimit) {
+			if(getLElbow()>=(lStow - stowFudge) && getRElbow()<=(rStow+stowFudge) && fourbarEncoder.get()<= lowerSafeZoneLimit || fourbarEncoder.get()>= upperSafeZoneLimit) {
 				if(toggleIntakeDftButton.on()) {
 					stowDelay = 0.0;
 					if(intakeOpenButton.held() && !intakeOutButton.held()) {
-						rIntakeSetpoint = open;
-						lIntakeSetpoint = open;
+						rIntakeSetpoint = rOpen;
+						lIntakeSetpoint = lOpen;
 					} else if(!intakeOpenButton.held() && intakeOutButton.held()) {
-						rIntakeSetpoint = grab;
-						lIntakeSetpoint = grab;
+						rIntakeSetpoint = rGrab;
+						lIntakeSetpoint = lGrab;
 						
 					}else {
-						rIntakeSetpoint = grab;
-						lIntakeSetpoint = grab;
+						rIntakeSetpoint = rGrab;
+						lIntakeSetpoint = lGrab;
 					}
 					
 				} else if(!toggleIntakeDftButton.on()) {
 					if(intakeOpenButton.held() && !intakeOutButton.held()) {
-						rIntakeSetpoint = open;
-						lIntakeSetpoint = open;
+						rIntakeSetpoint = rOpen;
+						lIntakeSetpoint = lOpen;
 						stowDelay = 0.0;
 						
 					} else if(!intakeOpenButton.held() && intakeOutButton.held()) {
-						rIntakeSetpoint = grab;
-						lIntakeSetpoint = grab;
+						rIntakeSetpoint = rGrab;
+						lIntakeSetpoint = lGrab;
 						stowDelay = 0.0;
 						
 						
 					}else {
 						
 						stowDelay += 1;
-						if(Math.abs(getLElbow())<= lStow  && getRElbow()<= rStow) {
+						if(Math.abs(getLElbow())<= lStow  && getRElbow()>= rStow) {
 							lIntakeSetpoint = lStow;
 							if(stowDelay >= 20) {
 								rIntakeSetpoint = rStow;
@@ -663,18 +647,18 @@ public class Robot extends IterativeRobot {
 			} 
 			
 			if(goinDown) {
-				lIntakeSetpoint = clear;
-				rIntakeSetpoint = clear;
+				lIntakeSetpoint = lClear;
+				rIntakeSetpoint = rClear;
 				unClampButton.reset();
 				stowDelay = 0.0;
 			}
 			if(goinUp) {
-				lIntakeSetpoint = clear;
-				rIntakeSetpoint = clear;
+				lIntakeSetpoint = lClear;
+				rIntakeSetpoint = rClear;
 				stowDelay = 0.0;
 			}
 			
-			if(rIntakeSetpoint >= grab && !intakeOutButton.held() && !clamped) {
+			if(rIntakeSetpoint <= rGrab && !intakeOutButton.held() && !clamped) {
 				leftBelt.set(ControlMode.PercentOutput, lBeltSpeed);
 				rightBelt.set(ControlMode.PercentOutput, rBeltSpeed);
 			} else if(intakeOutButton.held() && !clamped){
@@ -686,9 +670,9 @@ public class Robot extends IterativeRobot {
 				rightBelt.set(ControlMode.PercentOutput, 0.0);
 			}
 			
-			leftIntakeControl.setSetpoint(-lIntakeSetpoint + lResetOffset);
+			leftIntakeControl.setSetpoint(lIntakeSetpoint);
 			
-			rightIntakeControl.setSetpoint(rIntakeSetpoint - rResetOffset);
+			rightIntakeControl.setSetpoint(rIntakeSetpoint);
 			
 			if(fourbarIsSafe(fourbarSetpoint)) {
 				if(elevatorUpButton.changed()) {
@@ -714,21 +698,21 @@ public class Robot extends IterativeRobot {
 			SmartDashboard.putNumber("L Elbow Enc", getLElbow());
 			SmartDashboard.putNumber("R Elbow Enc", getRElbow());
 			SmartDashboard.putNumber("L Elbow Pot", lPot.get());
-			//SmartDashboard.putNumber("R Elbow Pot", rPot.get());
+			SmartDashboard.putNumber("R Elbow Pot", rPot.get());
 			SmartDashboard.putNumber("Fourbar", fourbarEncoder.get());
 			SmartDashboard.putNumber("Elevator", elevatorEncoder.get());
 			
 			switch((int)rIntakeSetpoint) {
-				case (int)start:
+				case (int)rStart:
 					intakeIndicator = "Start";
 					break;
-				case (int)grab:
+				case (int)rGrab:
 					intakeIndicator = "Grab";
 					break;
-				case (int)open:
+				case (int)rOpen:
 					intakeIndicator = "Open";
 					break;
-				case (int) clear:
+				case (int) rClear:
 					intakeIndicator = "Clear";
 					break;
 				case (int)rStow:
@@ -901,10 +885,10 @@ public class Robot extends IterativeRobot {
 		if(futureSetpoint >= upperSafeZoneLimit) {
 			return true;
 		}
-		if(Math.abs(getLElbow()-start)<= elbowFudge && Math.abs(getRElbow()-start)<=  elbowFudge) {
+		if(Math.abs(getLElbow()-lStart)<= elbowFudge && Math.abs(getRElbow()-rStart)<=  elbowFudge) {
 			return true;
 		}
-		if(Math.abs(Math.abs(getLElbow())-clear)<= elbowFudge && Math.abs(Math.abs(getRElbow())-clear)<= elbowFudge) {
+		if(Math.abs(Math.abs(getLElbow())-lClear)<= elbowFudge && Math.abs(Math.abs(getRElbow())-rClear)<= elbowFudge) {
 			return true;
 		}
 		return false;
@@ -943,9 +927,9 @@ public class Robot extends IterativeRobot {
 	  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 	}
 	public double getRElbow() {
-		return rElbowEncoder.get()+rResetOffset;
+		return rPot.get();
 	}
 	public double getLElbow() {
-		return lElbowEncoder.get()-lResetOffset;
+		return lPot.get();
 	}
 }

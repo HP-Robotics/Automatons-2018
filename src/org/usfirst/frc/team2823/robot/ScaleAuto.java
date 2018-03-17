@@ -203,12 +203,12 @@ public class ScaleAuto extends Autonomous {
 	public int backUpPeriodic() {
 		
 		if(timer.get() >0 && timer.get()<0.5) {
-			robot.rIntakeSetpoint = robot.clear;
+			robot.rIntakeSetpoint = robot.rClear;
 			robot.rightIntakeControl.setSetpoint(robot.rIntakeSetpoint);
 			robot.clamper.set(robot.clampIt);
 		}
 		if(timer.get()>0.5 && timer.get()<1.0) {
-			robot.lIntakeSetpoint = robot.clear;
+			robot.lIntakeSetpoint = robot.lClear;
 			robot.leftIntakeControl.setSetpoint(-robot.lIntakeSetpoint);
 		} 
 		if(robot.leftControl.isPlanFinished()&&robot.rightControl.isPlanFinished()) {
