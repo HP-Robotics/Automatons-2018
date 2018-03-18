@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.interfaces.Potentiometer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -78,8 +79,8 @@ public class Robot extends IterativeRobot {
 	VictorSPX rightBelt;
 	
 	//TalonSRX fourbarMotor;
-	VictorSPX fourbarMotor;//OWEN CHANGED FROM TALONSRX TO VICTORSPX 3/17/18 FOR SHADOW ROBOT
-	VictorSPX elevatorMotor;
+	VictorSPX fourbarMotor;//OWEN CHANGED FROM TALONSRX TO VICTORSPX 3/17/18 FOR SHADOW ROBOT  TODO
+	VictorSP elevatorMotor;// TODO HACKED TO BE VictorSP not SPX for Shadow
 
 	DoubleSolenoid clamper;
 	DoubleSolenoid driveSolenoid;
@@ -111,8 +112,8 @@ public class Robot extends IterativeRobot {
 	
 	final double lStow = 109.0;
 	final double rStow = 240.0;
-	final double lOpen = 220.0;
-	final double rOpen = 105.0;
+	final double lOpen = 205; //220  OWEN TODO LIMIT FOR SHADOW
+	final double rOpen = 127; //105  OWEN TODO LIMIT FOR SHADOW
 	final double lGrab = 184.0;
 	final double rGrab = 144.0;
 	final double lStart = 2.0;
@@ -125,7 +126,7 @@ public class Robot extends IterativeRobot {
 	boolean goinDown = false;
 	boolean goinUp = false;
 	final double stowFudge = 10;
-	final double elbowFudge = 6;
+	final double elbowFudge = 3;
 	final double autoStowThreshold = 500;
 	String intakeIndicator = "Start";
 	double rResetOffset = 0.0;
@@ -273,7 +274,7 @@ public class Robot extends IterativeRobot {
 			if(c != null) {
 				System.out.println("And it started.");
 				c.setResolution(320, 180);
-				c.setFPS(29);
+				c.setFPS(15);  /* Owen and Noelle found that A frame rate of 15 seems to work better than 29 */
 			}
 		}
 	   
@@ -314,11 +315,11 @@ public class Robot extends IterativeRobot {
 		leftBelt = new VictorSPX(21);
 		rightBelt = new VictorSPX(22);
 		
-		//fourbarMotor = new TalonSRX(31);	//OWEN CHANGED FROM TALONSPX TO VICTORSPX 3/17/18 FOR SHADOW ROBOT
+		//fourbarMotor = new TalonSRX(31);	//OWEN TODO CHANGED FROM TALONSPX TO VICTORSPX 3/17/18 FOR SHADOW ROBOT
 		fourbarMotor = new VictorSPX(31);
 		fourbarOutput = new FourbarOutput(this);
 		
-		elevatorMotor = new VictorSPX(41);	
+		elevatorMotor = new VictorSP(0 /*41*/);	// TODO HACKED TO REMOVE SPX FOR SHADOW
 		elevatorOutput = new ElevatorOutput(this);
 		
 		lDriveEncoder = new Encoder(2, 3, false, Encoder.EncodingType.k4X);
@@ -412,8 +413,8 @@ public class Robot extends IterativeRobot {
 		elevatorPIDControl = new SnazzyPIDController(0.005, 0, 0, 0, elevatorEncoder, elevatorOutput, 0.005, "ElevatorPID.csv");
 		//elevatorMotionControl = new SnazzyMotionPlanner(0, 0, 0, 0, 0, 0, elevatorEncoder, elevatorOutput, 0.005, "ElevatorMotion.csv");
 		
-		leftIntakeControl = new SnazzyPIDController(0.05, 0, 0, 0, lPot, lIntakeOutput, 0.005, "leftIntake.csv");
-		rightIntakeControl = new SnazzyPIDController(0.05, 0, 0, 0, rPot, rIntakeOutput, 0.005, "rightIntake.csv");
+		leftIntakeControl = new SnazzyPIDController(0.03, 0, 0, 0, lPot, lIntakeOutput, 0.005, "leftIntake.csv");
+		rightIntakeControl = new SnazzyPIDController(0.03, 0, 0, 0, rPot, rIntakeOutput, 0.005, "rightIntake.csv");
 		
 		rIntakeSetpoint = rStart;
 		lIntakeSetpoint = lStart;
@@ -507,10 +508,8 @@ public class Robot extends IterativeRobot {
 			lCurrentDist = leftInches.pidGet();
 			lLastDistances.add(lCurrentDist);
 			rLastDistances.add(rCurrentDist);
-			lastTimes.add(currentTime);
-			
-			
-			
+			lastTimes.add(currentTime);			
+
 			if(!unClampButton.on()) {
 				clamper.set(clampIt);
 				clamped = true;
@@ -882,7 +881,7 @@ public class Robot extends IterativeRobot {
 	
 	public boolean fourbarIsSafe(double futureSetpoint) {
 		// 18000 safe for arm
-		if(futureSetpoint >= upperSafeZoneLimit) {
+		if(futureSetpoint >= upperSafeZoneLimit && fourbarEncoder.get() >= upperSafeZoneLimit) {
 			return true;
 		}
 		if(Math.abs(getLElbow()-lStart)<= elbowFudge && Math.abs(getRElbow()-rStart)<=  elbowFudge) {
