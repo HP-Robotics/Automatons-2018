@@ -61,6 +61,10 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 		m_kA = ka;
 		m_kV = kv;
 	}
+	
+	public double getCurrentDistance() {
+		return m_currentWaypoint.m_position;
+	}
 	public void configureGoal(double goal, double max_v, double max_a, boolean dwell) {
 		m_motionPlanEnabled = true;
 		m_planFinished = false;

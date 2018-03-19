@@ -1,5 +1,6 @@
 - Nanny Mode Button if Elevator is up and option to turn off
 - Flesh out scale auto?
 - Tune high gear PID
--Use POT to reset elbow encoders
-- find equivalent values for pot and enc
+- 45 degree pov for fourbar up/down
+- camera fps < 15 work too?
+- Update to wpilib 18.3?  (The one that fixes network tables)

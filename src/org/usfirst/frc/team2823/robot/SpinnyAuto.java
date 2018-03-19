@@ -29,8 +29,10 @@ public class SpinnyAuto extends Autonomous {
 			
 			robot.leftControl.reset();
 			robot.rightControl.reset();
+			System.out.println(robot.gyro.getAngle());
 			
 			nextStage();
+			
 		}
 		return 0;
 	}

@@ -166,9 +166,9 @@ public class Robot extends IterativeRobot {
 	final double lowGearKV = 0.0108;
 	final double highGearKA = 0.00380;
 	final double highGearKV = 0.00623;
-	final double highGearP = 0.2;
-	final double highGearI = 0.00003;
-	final double highGearD = 3.0;
+	final double highGearP = 0.7;
+	final double highGearI = 0.002;
+	final double highGearD = 0.0;
 	final double lowGearP = 0.3;
 	final double lowGearI = 0.005;
 	final double lowGearD = 1.0;
@@ -198,6 +198,9 @@ public class Robot extends IterativeRobot {
 	
 	TrajectoryPlanner driveForwardTraj;
 	
+	TrajectoryPlanner racetrackStartTraj;
+	TrajectoryPlanner racetrackTurnTraj;
+	
 	final double FASTTOSLOW = 9.8;
 	final double SLOWTOFAST = 29;
 	
@@ -218,6 +221,9 @@ public class Robot extends IterativeRobot {
 	double[][] rightScaleEndPlan = {{220, -171+SLOWTOFAST, -90},{220, -171, -90}, {260 + 12, -222.74 +12, 45}};	
 	
 	double[][] driveForwardPlan = {{0,0,0}, {90, 0, 0}};
+	
+	double[][] racetrackStartPlan = {{0, 0, 0}, {60+FASTTOSLOW, 0, 0}};
+	double [][] racetrackTurnPlan = {{60-SLOWTOFAST, 0, 0}, {60,0,0}, {120, -60, -90}, {60, -120, -180}};
 
 	boolean calibrate = false;
 	boolean pidTune = false;
@@ -261,6 +267,7 @@ public class Robot extends IterativeRobot {
 	public void robotInit() {
 		autonomousChooser = new SendableChooser<Autonomous>();
 		autonomousChooser.addDefault("Empty: Do Nothing", new EmptyAutonomous(this));
+		autonomousChooser.addObject("Ractrack", new RacetrackAuto(this));
 		autonomousChooser.addObject("Drive Forward", new DriveForwardAuto(this));
 		autonomousChooser.addObject("Switch Auto", new SwitchAuto(this));
 		autonomousChooser.addObject("Scale Auto", new ScaleAuto(this));
@@ -353,8 +360,8 @@ public class Robot extends IterativeRobot {
 		fourbarEncoder.reset();
 		elevatorEncoder.reset();
 		
-		//gyro = new ADXRS450_Gyro();
-		//gyro.reset();
+		gyro = new ADXRS450_Gyro();
+		gyro.reset();
 	
 		lDriveOutput = new LeftDrivePIDOutput(this);
 		rDriveOutput = new RightDrivePIDOutput(this);
@@ -395,8 +402,15 @@ public class Robot extends IterativeRobot {
 		rightScaleEndTraj = new TrajectoryPlanner(rightScaleEndPlan, 100*0.5, 300, 300);
 		rightScaleEndTraj.generate();
 		
-		driveForwardTraj = new TrajectoryPlanner(driveForwardPlan, 100*0.5, 300, 300);
+		driveForwardTraj = new TrajectoryPlanner(driveForwardPlan, 100*.5, 300, 300);
 		driveForwardTraj.generate();
+		
+		racetrackStartTraj = new TrajectoryPlanner(racetrackStartPlan, 140, 600, 600);
+		racetrackStartTraj.generate();
+		racetrackTurnTraj = new TrajectoryPlanner(racetrackTurnPlan, 100*.5, 300, 300);
+		racetrackTurnTraj.generate();
+		
+		racetrackStartTraj.frankenstein(racetrackTurnTraj, 100*.5);
 		
 		leftControl = new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV,  leftInches, lDriveOutput, 0.005, "Left.csv");
 		rightControl= new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV,  rightInches, rDriveOutput, 0.005,"Right.csv");
@@ -418,6 +432,8 @@ public class Robot extends IterativeRobot {
 		
 		rIntakeSetpoint = rStart;
 		lIntakeSetpoint = lStart;
+		leftIntakeControl.setSetpoint(lIntakeSetpoint);
+		rightIntakeControl.setSetpoint(rIntakeSetpoint);
 		
 		SmartDashboard.putNumber("P", 0.05);
 		SmartDashboard.putNumber("I", 0.0);
@@ -798,22 +814,22 @@ public class Robot extends IterativeRobot {
 	public void pidTune() {
 		testButton.update(driveStick.getRawButton(1));
 		
-		driveSolenoid.set(lowGear);
-		//driveSolenoid.set(highGear);
+		//driveSolenoid.set(lowGear);
+		driveSolenoid.set(highGear);
 		
 		//leftControl.setkAkV(lowGearKA, lowGearKV);
 		//rightControl.setkAkV(lowGearKA, lowGearKV);
 		
-		//leftControl.setkAkV(highGearKA, highGearKV);
-		//rightControl.setkAkV(highGearKA, highGearKV);
+		leftControl.setkAkV(highGearKA, highGearKV);
+		rightControl.setkAkV(highGearKA, highGearKV);
 		
-		//leftControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
-		//rightControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		leftControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		rightControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		//leftPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		//rightPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		//fourbarPIDControl.setPID(SmartDashboard.getNumber("P", 0),SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
-		leftIntakeControl.setPID(SmartDashboard.getNumber("P", 0.05), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
-		rightIntakeControl.setPID(SmartDashboard.getNumber("P", 0.05), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		//leftIntakeControl.setPID(SmartDashboard.getNumber("P", 0.05), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
+		//rightIntakeControl.setPID(SmartDashboard.getNumber("P", 0.05), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		//elevatorPIDControl.setPID(SmartDashboard.getNumber("P", 0), SmartDashboard.getNumber("I", 0), SmartDashboard.getNumber("D", 0));
 		
 		if(testButton.on()){
@@ -834,14 +850,14 @@ public class Robot extends IterativeRobot {
 					//leftControl.configureTrajectory(driveForwardTraj.getLeftTrajectory(), false);
 					//rightControl.configureTrajectory(driveForwardTraj.getRightTrajectory(), false);
 					
-					//leftControl.configureTrajectory(rightSwitchAutoTraj.getLeftTrajectory(), false);
-					//rightControl.configureTrajectory(rightSwitchAutoTraj.getRightTrajectory(), false);
+					leftControl.configureTrajectory(driveForwardTraj.getLeftTrajectory(), false);
+					rightControl.configureTrajectory(driveForwardTraj.getRightTrajectory(), false);
 					
 					
 					//leftIntakeControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 					//leftIntakeControl.enable();
-					rightIntakeControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
-					rightIntakeControl.enable();
+					//rightIntakeControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
+					//rightIntakeControl.enable();
 					
 					//fourbarPIDControl.setSetpoint(SmartDashboard.getNumber("Setpoint", 0));
 					//fourbarPIDControl.enable();
@@ -853,19 +869,19 @@ public class Robot extends IterativeRobot {
 					//elevatorPIDControl.enable();
 					System.out.println("enable");
 					
-					//leftControl.enable();
-					//rightControl.enable();
+					leftControl.enable();
+					rightControl.enable();
 	
 				}
 				
 			}else if (testButton.changed()&& !testButton.on()){
 				//leftPIDControl.disable();
 				//rightPIDControl.disable();
-				//leftControl.disable();
-				//rightControl.disable();
+				leftControl.disable();
+				rightControl.disable();
 				//fourbarPIDControl.disable();
 				//leftIntakeControl.disable();
-				rightIntakeControl.disable();
+				//rightIntakeControl.disable();
 				//elevatorPIDControl.disable();
 				
 			}
@@ -875,7 +891,7 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("L Elbow Enc", getLElbow());
 		SmartDashboard.putNumber("R Elbow Enc", getRElbow());
 		SmartDashboard.putNumber("L Elbow Pot", lPot.get());
-		//SmartDashboard.putNumber("R Elbow Pot", rPot.get());
+		SmartDashboard.putNumber("R Elbow Pot", rPot.get());
 		SmartDashboard.putNumber("Elevator", elevatorEncoder.get());
 	}
 	

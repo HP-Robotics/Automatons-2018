@@ -6,6 +6,7 @@ import java.util.Arrays;
 import edu.wpi.first.wpilibj.Timer;
 import jaci.pathfinder.Pathfinder;
 import jaci.pathfinder.Trajectory;
+import jaci.pathfinder.Trajectory.Segment;
 import jaci.pathfinder.Waypoint;
 import jaci.pathfinder.modifiers.TankModifier;
 
@@ -46,7 +47,12 @@ public class TrajectoryPlanner {
     		Pathfinder.writeToCSV(myFile, m_trajectory);
     	}
     	System.out.println(m_trajectory.length());
-        TankModifier modifier = new TankModifier(m_trajectory).modify(wheelbase);
+    	
+        regenerate();
+    }
+    
+    public void regenerate() {
+		TankModifier modifier = new TankModifier(m_trajectory).modify(wheelbase);
         // Do something with the new Trajectories...
         m_left = modifier.getLeftTrajectory();
         m_right = modifier.getRightTrajectory();        
@@ -75,9 +81,7 @@ public class TrajectoryPlanner {
                     seg.acceleration + "," + seg.jerk + "," + seg.heading + "\n");
         }
         log.close();
-    }
-    
-    
+	}
     
     public Trajectory getLeftTrajectory() {
     	return m_left;
@@ -118,5 +122,31 @@ public class TrajectoryPlanner {
     	name += Double.toString(m_maxV)+Double.toString(m_maxA)+Double.toString(m_maxJ)+".csv";
     	return name;
     }
-
+    
+   public void  frankenstein( TrajectoryPlanner traj2, double v) {
+    	Trajectory newTraj;
+    	int chopOne = 0;
+    	int chopTwo = traj2.m_trajectory.segments.length;
+    	
+    	for (int i = m_trajectory.segments.length-1; i>= 0 && m_trajectory.segments[i].velocity< v ; i--) {
+    		chopOne = i;
+    	}
+    	for (int i = 0;i <traj2.m_trajectory.segments.length && traj2.m_trajectory.segments[i].velocity < v; i++) {
+    		chopTwo = i;
+    	}
+    	
+    	newTraj = new Trajectory(chopOne + (traj2.m_trajectory.segments.length-chopTwo));
+    	
+    	for (int i = 0; i< chopOne ; i++) {
+    		newTraj.segments[i] = m_trajectory.segments[i];
+    	}
+    	for (int i = chopTwo;i <traj2.m_trajectory.segments.length; i++) {
+    		newTraj.segments[chopOne+i-chopTwo] = traj2.m_trajectory.segments[i];
+    	}
+    	m_trajectory = newTraj;
+    	System.out.println("chopOne " + chopOne + "; chopTwo " + chopTwo);
+    	System.out.println(getFileName());
+    	System.out.println(traj2.getFileName());
+    	//regenerate();
+    }
 }
