@@ -22,12 +22,14 @@ public class TrajectoryPlanner {
 	private double m_maxV;
 	private double m_maxJ;
 	private double wheelbase = 25.125;
+	private String m_name;
 	
-	public TrajectoryPlanner(double[][] ap, double max_v, double max_a, double max_j) {
+	public TrajectoryPlanner(double[][] ap, double max_v, double max_a, double max_j, String name) {
 		arrayPoints = ap;
 		m_maxA = max_a;
 		m_maxV = max_v;
 		m_maxJ = max_j;
+		m_name = name;
 		
 	}
 	
@@ -60,7 +62,7 @@ public class TrajectoryPlanner {
         for (int i = 0; i < m_trajectory.length(); i++) {
             Trajectory.Segment seg = m_trajectory.get(i);
             
-            log.open("Trajectory.csv","Timestamp,X,Y,Position,Velocity,Accel,Jerk,Heading\n");
+            log.open(m_name+"Trajectory.csv","Timestamp,X,Y,Position,Velocity,Accel,Jerk,Heading\n");
             log.write(seg.dt + "," + seg.x + "," + seg.y + "," + seg.position + "," + seg.velocity + "," + 
                     seg.acceleration + "," + seg.jerk + "," + seg.heading + "\n");
         }
@@ -68,7 +70,7 @@ public class TrajectoryPlanner {
         for (int i = 0; i < m_trajectory.length(); i++) {
             Trajectory.Segment seg = m_left.get(i);
             
-            log.open("LeftTrajectory.csv","Timestamp,X,Y,Position,Velocity,Accel,Jerk,Heading\n");
+            log.open(m_name+"LeftTrajectory.csv","Timestamp,X,Y,Position,Velocity,Accel,Jerk,Heading\n");
             log.write(seg.dt + "," + seg.x + "," + seg.y + "," + seg.position + "," + seg.velocity + "," + 
                     seg.acceleration + "," + seg.jerk + "," + seg.heading + "\n");
         }
@@ -76,7 +78,7 @@ public class TrajectoryPlanner {
         for (int i = 0; i < m_trajectory.length(); i++) {
             Trajectory.Segment seg = m_right.get(i);
             
-            log.open("RightTrajectory.csv","Timestamp,X,Y,Position,Velocity,Accel,Jerk,Heading\n");
+            log.open(m_name+"RightTrajectory.csv","Timestamp,X,Y,Position,Velocity,Accel,Jerk,Heading\n");
             log.write(seg.dt + "," + seg.x + "," + seg.y + "," + seg.position + "," + seg.velocity + "," + 
                     seg.acceleration + "," + seg.jerk + "," + seg.heading + "\n");
         }
@@ -115,7 +117,7 @@ public class TrajectoryPlanner {
     }
     
     public String getFileName() {
-    	String name = new String("/home/lvuser/Trajectory.");
+    	String name = new String("/home/lvuser/"+m_name+"Trajectory.");
     	for (int i=0;i<arrayPoints.length;i++) {
     		name += Double.toString(arrayPoints[i][0])+"."+Double.toString(arrayPoints[i][1])+"."+Double.toString(arrayPoints[i][2]);
     	}
@@ -125,28 +127,50 @@ public class TrajectoryPlanner {
     
    public void  frankenstein( TrajectoryPlanner traj2, double v) {
     	Trajectory newTraj;
+    	rename("Frankenstein"+m_name);
     	int chopOne = 0;
     	int chopTwo = traj2.m_trajectory.segments.length;
     	
     	for (int i = m_trajectory.segments.length-1; i>= 0 && m_trajectory.segments[i].velocity< v ; i--) {
     		chopOne = i;
+    		
     	}
     	for (int i = 0;i <traj2.m_trajectory.segments.length && traj2.m_trajectory.segments[i].velocity < v; i++) {
     		chopTwo = i;
+    		
     	}
     	
     	newTraj = new Trajectory(chopOne + (traj2.m_trajectory.segments.length-chopTwo));
-    	
+    	double maxv1 = 0;
     	for (int i = 0; i< chopOne ; i++) {
-    		newTraj.segments[i] = m_trajectory.segments[i];
+    		newTraj.segments[i] = m_trajectory.segments[i].copy();
+    		if(m_trajectory.segments[i].velocity>maxv1) {
+    			maxv1 = m_trajectory.segments[i].velocity;
+    		}
     	}
+    	double maxv2 = 0;
     	for (int i = chopTwo;i <traj2.m_trajectory.segments.length; i++) {
-    		newTraj.segments[chopOne+i-chopTwo] = traj2.m_trajectory.segments[i];
+    		
+    		newTraj.segments[chopOne+i-chopTwo] = traj2.m_trajectory.segments[i].copy();
+    		
+    		newTraj.segments[chopOne+i-chopTwo].position += m_trajectory.segments[chopOne].position-traj2.m_trajectory.segments[chopTwo].position;
+    		
+    		if(traj2.m_trajectory.segments[i].velocity>maxv2) {
+    			maxv2 = traj2.m_trajectory.segments[i].velocity;
+    		}
+    		
     	}
-    	m_trajectory = newTraj;
-    	System.out.println("chopOne " + chopOne + "; chopTwo " + chopTwo);
+    	
+    	System.out.println("chopOne " + chopOne + " "+ m_trajectory.segments[chopOne].position+ "; chopTwo " + chopTwo + " "+traj2.m_trajectory.segments[chopTwo].position);
+    	System.out.println("Max V1: "+ maxv1+ "Max V2: "+ maxv2);
     	System.out.println(getFileName());
     	System.out.println(traj2.getFileName());
-    	//regenerate();
+    	m_trajectory = newTraj;
+
+    	regenerate();
     }
+   
+   public void rename(String new_name) {
+	   m_name = new_name;
+   }
 }

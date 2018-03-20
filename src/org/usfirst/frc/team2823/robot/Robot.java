@@ -222,7 +222,7 @@ public class Robot extends IterativeRobot {
 	
 	double[][] driveForwardPlan = {{0,0,0}, {90, 0, 0}};
 	
-	double[][] racetrackStartPlan = {{0, 0, 0}, {60+FASTTOSLOW, 0, 0}};
+	double[][] racetrackStartPlan = {{0, 0, 0}, {60+FASTTOSLOW+8.1, 0, 0}};
 	double [][] racetrackTurnPlan = {{60-SLOWTOFAST, 0, 0}, {60,0,0}, {120, -60, -90}, {60, -120, -180}};
 
 	boolean calibrate = false;
@@ -369,45 +369,45 @@ public class Robot extends IterativeRobot {
 		lIntakeOutput = new LeftIntakeOutput(this);
 		rIntakeOutput = new RightIntakeOutput(this);
 		
-		rightSwitchAutoTraj = new TrajectoryPlanner(rightSwitchAutoPlan, 100*0.5, 300, 300); //the integers are what the chassis is capable of, then we limit it with the decimals
+		rightSwitchAutoTraj = new TrajectoryPlanner(rightSwitchAutoPlan, 100*0.5, 300, 300, "RSwitchA"); //the integers are what the chassis is capable of, then we limit it with the decimals
 		rightSwitchAutoTraj.generate();
 		
-		leftSwitchAutoTraj = new TrajectoryPlanner(leftSwitchAutoPlan, 100*0.5, 300, 300);
+		leftSwitchAutoTraj = new TrajectoryPlanner(leftSwitchAutoPlan, 100*0.5, 300, 300,"LSwitchA");
 		leftSwitchAutoTraj.generate();
 		
-		leftSwitchBackTraj = new TrajectoryPlanner(leftSwitchBackPlan, 100*0.5, 300, 300);
+		leftSwitchBackTraj = new TrajectoryPlanner(leftSwitchBackPlan, 100*0.5, 300, 300, "LSwitchBack");
 		leftSwitchBackTraj.generate();
 		
-		rightSwitchBackTraj = new TrajectoryPlanner(rightSwitchBackPlan, 100*0.5, 300, 300);
+		rightSwitchBackTraj = new TrajectoryPlanner(rightSwitchBackPlan, 100*0.5, 300, 300, "RSwitchBack");
 		rightSwitchBackTraj.generate();
 		
-		switchGrabCubeTraj = new TrajectoryPlanner(switchGrabCubePlan, 100*0.5, 300, 300);
+		switchGrabCubeTraj = new TrajectoryPlanner(switchGrabCubePlan, 100*0.5, 300, 300, "SwitchGrab");
 		switchGrabCubeTraj.generate();
 		
-		leftScaleStartTraj = new TrajectoryPlanner(leftScaleStartPlan, 140, 600, 600);
+		leftScaleStartTraj = new TrajectoryPlanner(leftScaleStartPlan, 140, 600, 600, "LScaleStart");
 		leftScaleStartTraj.generate();
 		
-		leftScaleEndTraj = new TrajectoryPlanner(leftScaleEndPlan, 100 *0.5, 300, 300);
+		leftScaleEndTraj = new TrajectoryPlanner(leftScaleEndPlan, 100 *0.5, 300, 300, "LScaleEnd");
 		leftScaleEndTraj.generate();
 		
-		rightScaleStartTraj = new TrajectoryPlanner(rightScaleStartPlan, 140, 600, 600);
+		rightScaleStartTraj = new TrajectoryPlanner(rightScaleStartPlan, 140, 600, 600,"RScaleStart");
 		rightScaleStartTraj.generate();
 		
-		rightScaleFirstTurnTraj = new TrajectoryPlanner(rightScaleFirstTurnPlan, 100 *0.5, 300, 300);
+		rightScaleFirstTurnTraj = new TrajectoryPlanner(rightScaleFirstTurnPlan, 100 *0.5, 300, 300,"RScaleFturn");
 		rightScaleFirstTurnTraj.generate();
 		
-		rightScaleMidTraj = new TrajectoryPlanner(rightScaleMidPlan, 140, 600, 600);
+		rightScaleMidTraj = new TrajectoryPlanner(rightScaleMidPlan, 140, 600, 600, "RScaleMid");
 		rightScaleMidTraj.generate();
 		
-		rightScaleEndTraj = new TrajectoryPlanner(rightScaleEndPlan, 100*0.5, 300, 300);
+		rightScaleEndTraj = new TrajectoryPlanner(rightScaleEndPlan, 100*0.5, 300, 300, "RScaleEnd");
 		rightScaleEndTraj.generate();
 		
-		driveForwardTraj = new TrajectoryPlanner(driveForwardPlan, 100*.5, 300, 300);
+		driveForwardTraj = new TrajectoryPlanner(driveForwardPlan, 100*.5, 300, 300, "DriveForward");
 		driveForwardTraj.generate();
 		
-		racetrackStartTraj = new TrajectoryPlanner(racetrackStartPlan, 140, 600, 600);
+		racetrackStartTraj = new TrajectoryPlanner(racetrackStartPlan, 140, 600, 600, "RacetrackStart");
 		racetrackStartTraj.generate();
-		racetrackTurnTraj = new TrajectoryPlanner(racetrackTurnPlan, 100*.5, 300, 300);
+		racetrackTurnTraj = new TrajectoryPlanner(racetrackTurnPlan, 100*.5, 300, 300, "RacetrackTurn");
 		racetrackTurnTraj.generate();
 		
 		racetrackStartTraj.frankenstein(racetrackTurnTraj, 100*.5);
@@ -716,6 +716,7 @@ public class Robot extends IterativeRobot {
 			SmartDashboard.putNumber("R Elbow Pot", rPot.get());
 			SmartDashboard.putNumber("Fourbar", fourbarEncoder.get());
 			SmartDashboard.putNumber("Elevator", elevatorEncoder.get());
+			SmartDashboard.putBoolean("Nanny", elevatorUp);
 			
 			switch((int)rIntakeSetpoint) {
 				case (int)rStart:

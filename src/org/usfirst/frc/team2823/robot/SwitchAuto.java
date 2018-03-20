@@ -106,7 +106,7 @@ public class SwitchAuto extends Autonomous {
 		}
 		if(timer.get()>1.0 && timer.get()<1.5) {
 			robot.lIntakeSetpoint = robot.lClear;
-			robot.leftIntakeControl.setSetpoint(-robot.lIntakeSetpoint);
+			robot.leftIntakeControl.setSetpoint(robot.lIntakeSetpoint);
 			robot.fourbarSetpoint = 30000;
 			robot.fourbarPIDControl.setSetpoint(robot.fourbarSetpoint);
 		} 
@@ -157,7 +157,7 @@ public class SwitchAuto extends Autonomous {
 			robot.rightIntakeControl.setSetpoint(robot.rIntakeSetpoint);
 			
 			robot.lIntakeSetpoint = robot.lOpen;
-			robot.leftIntakeControl.setSetpoint(-robot.lIntakeSetpoint);
+			robot.leftIntakeControl.setSetpoint(robot.lIntakeSetpoint);
 			
 			robot.leftBelt.set(ControlMode.PercentOutput, robot.lBeltSpeed);
 			robot.rightBelt.set(ControlMode.PercentOutput, robot.rBeltSpeed);
@@ -182,7 +182,7 @@ public class SwitchAuto extends Autonomous {
 			robot.rightIntakeControl.setSetpoint(robot.rIntakeSetpoint);
 			
 			robot.lIntakeSetpoint = robot.lGrab;
-			robot.leftIntakeControl.setSetpoint(-robot.lIntakeSetpoint);
+			robot.leftIntakeControl.setSetpoint(robot.lIntakeSetpoint);
 			
 			robot.leftControl.reset();
 			robot.rightControl.reset();
