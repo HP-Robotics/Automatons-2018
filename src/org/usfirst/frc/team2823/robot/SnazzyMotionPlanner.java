@@ -1,5 +1,6 @@
 package org.usfirst.frc.team2823.robot;
 
+import java.util.ArrayList;
 import java.util.TimerTask;
 
 import org.usfirst.frc.team2823.robot.SnazzyMotionPlanner.MotionWayPoint;
@@ -34,27 +35,39 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 	private double m_initTime;
 	private double m_initPos;
 	private Trajectory m_trajectory;
+	private ArrayList <Double> m_headingV;
+	private ArrayList <Double> m_headingA;
 	private double m_period;
 	
 	private double m_kA;
 	private double m_kV;
-
+	private double m_kAT;
+	private double m_kVT;
+	
+	private Robot m_r;
+	
 	public class MotionWayPoint {
 		double m_time;
 		double m_position;
 		double m_expectedVelocity;
 		double m_expectedAcceleration;
+		double m_expectedtA;
+		double m_expectedtV;
+		double m_heading;
 	}
 
-	public SnazzyMotionPlanner(double Kp, double Ki, double Kd, double Kf, double kA, double kV, PIDSource source, PIDOutput output,
-			double period, String fname) {
+	public SnazzyMotionPlanner(double Kp, double Ki, double Kd, double Kf, double kA, double kV, double kAT, double kVT, PIDSource source, PIDOutput output,
+			double period, String fname, Robot robot) {
 		super(Kp, Ki, Kd, Kf, source, output, period, fname);
 		m_controlLoop = new java.util.Timer();
 		m_controlLoop.schedule(new PIDTask(), 0L, (long) (period * 1000));
 		m_calLog = new SnazzyLog();
 		m_kA = kA;
 		m_kV = kV;
+		m_kAT = kAT;
+		m_kVT = kVT;
 		m_period = period;
+		m_r = robot;
 	}	 
 	
 	public void setkAkV (double ka, double kv) {
@@ -62,8 +75,13 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 		m_kV = kv;
 	}
 	
+	public void setkATkVT (double kat, double kvt) {
+		m_kAT = kat;
+		m_kVT = kvt;
+	}
+	
 	public double getCurrentDistance() {
-		return m_currentWaypoint.m_position;
+		return m_pidInput.pidGet();
 	}
 	public void configureGoal(double goal, double max_v, double max_a, boolean dwell) {
 		m_motionPlanEnabled = true;
@@ -172,6 +190,7 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 		m_initPos = m_pidInput.pidGet();
 
 		m_trajectory = t;
+		computeHeadingStuff();
 	}
 	public void runCalibration() {
 		double currentDist;
@@ -187,7 +206,8 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 		m_calLog.write(currentCal-m_calStart + ", " + currentDist + ", " + currentV + "\n");
 		if(currentV <= (m_lastV*1.01)) {
 			m_count +=1;
-			if(m_count >= 10) {
+			if(m_count >= 10)
+				{
 				stopCalibration();
 			}
 		}else {
@@ -259,8 +279,29 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 		}		  
 	}
 	
+	
+	public void computeHeadingStuff( ) {
+		m_headingV = new ArrayList<Double>();
+		m_headingA = new ArrayList<Double>();
+		for (int i = 0; i < m_trajectory.segments.length; i++) {
+			double v = 0.0;
+			double a = 0.0;
+			if(i >0) {
+				v = computeVelocityHeading(m_trajectory.segments[i].heading, m_trajectory.segments[i-1].heading, m_period);
+			}
+			m_headingV.add(v);
+			if(i>1) {
+				a = computeAccelHeading(m_headingV.get(i), m_headingV.get(i-1), m_period);
+			}
+			
+			
+			m_headingA.add(a);
+			
+		}
+	}
 	public MotionWayPoint getTrajectoryWaypoint(double t) {
 		int i = (int) (t/m_period);
+		double currentT = Timer.getFPGATimestamp();
 		//System.out.println(t + ", " + m_period);
 		if(i >= m_trajectory.length()) {
 			return null;
@@ -269,8 +310,10 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 		p.m_position = m_trajectory.segments[i].position;
 		p.m_expectedAcceleration = m_trajectory.segments[i].acceleration;
 		p.m_expectedVelocity = m_trajectory.segments[i].velocity;
+		p.m_expectedtA = m_headingA.get(i);
+		p.m_expectedtV = m_headingV.get(i);
+		p.m_heading = m_trajectory.segments[i].heading;
 		p.m_time = t;
-		
 		return p;
 	}
 	
@@ -280,13 +323,52 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 	
 	protected double calculateFeedForward() {
 		if((m_motionPlanEnabled || m_motionTrajectoryEnabled) && m_currentWaypoint != null) {
-    		return (m_currentWaypoint.m_expectedAcceleration * m_kA) + (m_currentWaypoint.m_expectedVelocity * m_kV);
+    		return (m_currentWaypoint.m_expectedAcceleration * m_kA) + (m_currentWaypoint.m_expectedVelocity * m_kV)
+    				+ (m_currentWaypoint.m_expectedtA * m_kAT) + (m_currentWaypoint.m_expectedtV * m_kVT);
     	}
     	
     	return 0.0;
 
 	}
+	
+	protected double calculateTFeedForward() {
+		if((m_motionPlanEnabled || m_motionTrajectoryEnabled) && m_currentWaypoint != null) {
+    		return (m_currentWaypoint.m_expectedtA * m_kAT) + (m_currentWaypoint.m_expectedtV * m_kVT);
+    	}
+    	
+    	return 0.0;
 
+	}
+	protected double getHeading() {
+		if((m_motionPlanEnabled || m_motionTrajectoryEnabled) && m_currentWaypoint != null) {
+    		return (m_currentWaypoint.m_heading);
+    	}
+    	
+    	return 0.0;
+
+	}
+	protected double getGyro() {
+		if((m_motionPlanEnabled || m_motionTrajectoryEnabled) && m_currentWaypoint != null) {
+    		return m_r.gyro.getAngle();
+    	}
+    	
+    	return 0.0;
+
+	}
+	
+	public double computeVelocityHeading(double currentH, double prevH, double t) {
+		
+		if((currentH-prevH)>(Math.PI)) {
+			currentH -= 2.0*Math.PI;
+		}else if((prevH - currentH)>Math.PI) {
+			currentH += 2.0*Math.PI;
+		}
+		return (currentH-prevH)/t;
+	}
+	public double computeAccelHeading(double currentHV, double prevHV, double t) {
+		return (currentHV-prevHV)/t;
+	}
+	
 	private class PIDTask extends TimerTask {
 
 		@Override

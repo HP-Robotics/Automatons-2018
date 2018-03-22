@@ -237,6 +237,7 @@ public class SnazzyPIDCalculator implements PIDInterface, LiveWindowSendable {
     double iterm = 0;
     double dterm = 0;
     double fterm = 0;
+    double tfterm = 0;
     
     synchronized (this) {
       if (m_pidInput == null) {
@@ -295,7 +296,8 @@ public class SnazzyPIDCalculator implements PIDInterface, LiveWindowSendable {
           iterm = m_I * m_totalError;
           dterm = m_D*(m_error - m_prevError);
           fterm = calculateFeedForward();
-          m_result = pterm + iterm + dterm + fterm;
+          tfterm = calculateTFeedForward();
+          m_result = pterm + iterm + dterm + fterm + tfterm;
         }
         m_prevError = m_error;
 
@@ -318,7 +320,7 @@ public class SnazzyPIDCalculator implements PIDInterface, LiveWindowSendable {
       
 
 	  m_log.write(timestamp + ", " + input + ", " + m_error + ", " + m_totalError + 
-				  ", " + m_result + ", " + pterm + ", " + iterm + ", " + dterm + ", " + fterm + ", " + m_setpoint + "\n");
+				  ", " + m_result + ", " + pterm + ", " + iterm + ", " + dterm + ", " + fterm + ", " +tfterm+", "+ getHeading()+", "+getGyro()+", "+ m_setpoint + "\n");
     }
   }
 
@@ -345,7 +347,17 @@ public class SnazzyPIDCalculator implements PIDInterface, LiveWindowSendable {
       return temp;
     }
   }
-
+  
+  protected double calculateTFeedForward() {
+	    return 0;
+	  }
+  protected double getHeading() {
+	    return 0;
+	  }
+  
+  protected double getGyro() {
+	    return 0;
+	  }
   /**
    * Set the PID Controller gain parameters. Set the proportional, integral, and differential
    * coefficients.
@@ -666,7 +678,7 @@ public class SnazzyPIDCalculator implements PIDInterface, LiveWindowSendable {
 		m_result = 0;
 	}
     m_enabled = true;
-    m_log.open(m_file, "Timestamp, Input, Error, Accumulated Error, Calculated Output, P: " + m_P + ", I: " + m_I +  ", D: " + m_D + ", F: " + m_F + ", Setpoint\n");
+    m_log.open(m_file, "Timestamp, Input, Error, Accumulated Error, Calculated Output, P: " + m_P + ", I: " + m_I +  ", D: " + m_D + ", F: " + m_F +", TF, Heading, Gyro"+", Setpoint\n");
     m_log.reset();
     
     if (m_table != null) {

@@ -111,15 +111,15 @@ public class Robot extends IterativeRobot {
 	SnazzyPIDController rightIntakeControl;
 	
 	final double lStow = 109.0;
-	final double rStow = 240.0;
+	final double rStow = 303;//240.0;
 	final double lOpen = 205; //220  OWEN TODO LIMIT FOR SHADOW
-	final double rOpen = 127; //105  OWEN TODO LIMIT FOR SHADOW
+	final double rOpen = 182;  //127-temp; //105-old  OWEN TODO LIMIT FOR SHADOW
 	final double lGrab = 184.0;
-	final double rGrab = 144.0;
+	final double rGrab = 207;//144.0;
 	final double lStart = 2.0;
-	final double rStart = 343.0;
+	final double rStart = 361;//343.0;
 	final double lClear = 199.0;
-	final double rClear = 128.0;
+	final double rClear = 188;//128.0;
 	double rIntakeSetpoint = 0.0;
 	double lIntakeSetpoint = 0.0;
 	double stowDelay = 0.0;
@@ -169,8 +169,8 @@ public class Robot extends IterativeRobot {
 	final double highGearP = 0.7;
 	final double highGearI = 0.002;
 	final double highGearD = 0.0;
-	final double lowGearP = 0.3;
-	final double lowGearI = 0.005;
+	final double lowGearP = 0.3+0.4;
+	final double lowGearI = 0.005+0.01;
 	final double lowGearD = 1.0;
 	
 	double maxPow = 1.0;
@@ -412,8 +412,8 @@ public class Robot extends IterativeRobot {
 		
 		racetrackStartTraj.frankenstein(racetrackTurnTraj, 100*.5);
 		
-		leftControl = new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV,  leftInches, lDriveOutput, 0.005, "Left.csv");
-		rightControl= new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV,  rightInches, rDriveOutput, 0.005,"Right.csv");
+		leftControl = new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV, -0.044, -0.178, leftInches, lDriveOutput, 0.005, "Left.csv", this);
+		rightControl= new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV, 0.044, 0.178, rightInches, rDriveOutput, 0.005,"Right.csv", this);
 		
 		leftPIDControl = new SnazzyPIDController(0.04, 0.001, 0.8, 0, leftInches, lDriveOutput, 0.005, "Left.csv");
 		rightPIDControl= new SnazzyPIDController(0.04, 0.001, 0.8, 0, rightInches, rDriveOutput, 0.005,"Right.csv");
@@ -466,6 +466,8 @@ public class Robot extends IterativeRobot {
 		
 		leftControl.reset();
 		rightControl.reset();
+		
+		gyro.reset();
 		
 		lIntakeSetpoint = lStart;
 		leftIntakeControl.setSetpoint(lStart);

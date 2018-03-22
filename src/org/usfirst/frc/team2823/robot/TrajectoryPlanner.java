@@ -21,7 +21,7 @@ public class TrajectoryPlanner {
 	private double m_maxA;
 	private double m_maxV;
 	private double m_maxJ;
-	private double wheelbase = 25.125;
+	private double wheelbase = 25.125+3.05;  // 2.9 pretty good
 	private String m_name;
 	
 	public TrajectoryPlanner(double[][] ap, double max_v, double max_a, double max_j, String name) {
@@ -168,9 +168,19 @@ public class TrajectoryPlanner {
     	m_trajectory = newTraj;
 
     	regenerate();
+    	flattenkAkV();
     }
    
    public void rename(String new_name) {
 	   m_name = new_name;
+   }
+   
+   public void flattenkAkV() {
+	   for (int i = 0; i< m_trajectory.segments.length; i++) {
+		   m_left.segments[i].acceleration = m_trajectory.segments[i].acceleration;
+		   m_left.segments[i].velocity = m_trajectory.segments[i].velocity;
+		   m_right.segments[i].acceleration = m_trajectory.segments[i].acceleration;
+		   m_right.segments[i].velocity = m_trajectory.segments[i].velocity;
+	   }
    }
 }

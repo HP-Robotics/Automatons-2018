@@ -4,3 +4,4 @@
 - 45 degree pov for fourbar up/down
 - camera fps < 15 work too?
 - Update to wpilib 18.3?  (The one that fixes network tables)
+-Do spinny swivel motion

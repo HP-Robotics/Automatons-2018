@@ -15,7 +15,7 @@ public class RacetrackAuto extends Autonomous {
 	}
 	
 	public int goStart() {
-		robot.configureToGear(robot.highGear);
+		robot.configureToGear(robot.lowGear);
 		
 		robot.leftControl.configureTrajectory(robot.racetrackStartTraj.getLeftTrajectory(), false);
 		robot.rightControl.configureTrajectory(robot.racetrackStartTraj.getRightTrajectory(), false);
