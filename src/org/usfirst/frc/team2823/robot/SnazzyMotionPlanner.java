@@ -206,7 +206,7 @@ public class SnazzyMotionPlanner extends SnazzyPIDCalculator {
 		m_calLog.write(currentCal-m_calStart + ", " + currentDist + ", " + currentV + "\n");
 		if(currentV <= (m_lastV*1.01)) {
 			m_count +=1;
-			if(m_count >= 10)
+			if(m_count >= 30)
 				{
 				stopCalibration();
 			}

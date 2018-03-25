@@ -5,3 +5,14 @@
 - camera fps < 15 work too?
 - Update to wpilib 18.3?  (The one that fixes network tables)
 -Do spinny swivel motion
+- Test switch auto- (hopefully it breaks on left)
+-Back up at end of switch auto
+-Raise low safe point
+-Lower p on intake arms and make grab closer
+-Calibrate gyro
+-180 spinny move at end of scale
+-Frakenstein right scale auto
+-Check for windows updates after 10k
+-Weird auto stuff????
+-Don't allow the fourbar to go up with clamp open?
+-Allow the fourbar to go up when it is up but the set point is low

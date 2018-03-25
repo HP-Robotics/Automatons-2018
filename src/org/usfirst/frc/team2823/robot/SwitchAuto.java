@@ -20,7 +20,8 @@ public class SwitchAuto extends Autonomous {
 				new BlueprintStep(5.0, this::backStart, this::backPeriodic),
 				new BlueprintStep(4.0, this::forwardStart, this::forwardPeriodic),
 				new BlueprintStep(1.5, this::waitStart, this::waitPeriodic),
-				new BlueprintStep(1.0, this::clampStart, this::clampPeriodic)
+				new BlueprintStep(1.0, this::clampStart, this::clampPeriodic),
+				new BlueprintStep(3.0, this::backUpStart, this::backUpPeriodic)
 				};
 		setBlueprints(blueprints);
 		
@@ -217,5 +218,27 @@ public class SwitchAuto extends Autonomous {
 		return 0;
 	}
 	
+	public int backUpStart() {
+
+		robot.leftControl.configureGoal(-40, 50, 100);
+		robot.rightControl.configureGoal(-40, 50, 100);
+		
+		robot.leftControl.enable();
+		robot.rightControl.enable();
+
+		return 0;
+	}
+
+	public int backUpPeriodic() {
+		if(robot.leftControl.isPlanFinished()&&robot.rightControl.isPlanFinished()) {
+			
+			robot.leftControl.reset();
+			robot.rightControl.reset();
+				
+			nextStage();
+		}
+		return 0;
+	}
+
 }
 

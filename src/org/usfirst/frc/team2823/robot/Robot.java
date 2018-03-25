@@ -114,8 +114,8 @@ public class Robot extends IterativeRobot {
 	final double rStow = 303;//240.0;
 	final double lOpen = 205; //220  OWEN TODO LIMIT FOR SHADOW
 	final double rOpen = 182;  //127-temp; //105-old  OWEN TODO LIMIT FOR SHADOW
-	final double lGrab = 184.0;
-	final double rGrab = 207;//144.0;
+	final double lGrab = 184; //178.0;
+	final double rGrab = 207;//213.0;//144.0;
 	final double lStart = 2.0;
 	final double rStart = 361;//343.0;
 	final double lClear = 199.0;
@@ -145,7 +145,7 @@ public class Robot extends IterativeRobot {
 	
 	double fourbarSetpoint = 0.0;
 	final double downStep = 1000.0;
-	final double upStep = 1000.0;
+	final double upStep = 2000.0;
 	final double fourbarLastBit = downStep*8;
 	final double fourbarUpperLimit = 90000;
 	final double fourbarLowerLimit = 0;
@@ -204,11 +204,11 @@ public class Robot extends IterativeRobot {
 	final double FASTTOSLOW = 9.8;
 	final double SLOWTOFAST = 29;
 	
-	double[][] rightSwitchAutoPlan = {{0,0,0},{100.5, -54.25 - 8, 0}};
-	double[][] rightSwitchBackPlan = {{20, 5.25, 0}, {100.5, -54.25 - 8, 0}};
+	double[][] rightSwitchAutoPlan = {{0,0,0},{100.5, -54.25 , 0}};
+	double[][] rightSwitchBackPlan = {{20, 5.25, 0}, {100.5, -54.25 , 0}};
 	
-	double[][] leftSwitchAutoPlan = {{0,0,0},{100.5, 64.75 + 12, 0}};
-	double[][] leftSwitchBackPlan = {{20, 5.25 + 5, 0}, {100.5, 64.75 + 12, 0}};
+	double[][] leftSwitchAutoPlan = {{0,0,0},{100.5, 64.75 , 0}};
+	double[][] leftSwitchBackPlan = {{20, 5.25, 0}, {100.5, 64.75, 0}};
 	
 	double[][] switchGrabCubePlan = {{0,0,0}, {38.5 + 9, 0, 0}};
 	
@@ -218,7 +218,7 @@ public class Robot extends IterativeRobot {
 	double[][] rightScaleStartPlan = {{0,0,0}, {160 + FASTTOSLOW, 0, 0}};
 	double[][] rightScaleFirstTurnPlan = {{160-SLOWTOFAST, 0,0},{160, 0, 0}, {220, -60,-90}, {220, -60-SLOWTOFAST,-90}};
 	double[][] rightScaleMidPlan = {{220, -60 + FASTTOSLOW, -90},{220, -171- FASTTOSLOW, -90}};
-	double[][] rightScaleEndPlan = {{220, -171+SLOWTOFAST, -90},{220, -171, -90}, {260 + 12, -222.74 +12, 45}};	
+	double[][] rightScaleEndPlan = {{220, -171, -90}, {260 + 12, -222.74 +12, 45}};	
 	
 	double[][] driveForwardPlan = {{0,0,0}, {90, 0, 0}};
 	
@@ -412,6 +412,9 @@ public class Robot extends IterativeRobot {
 		
 		racetrackStartTraj.frankenstein(racetrackTurnTraj, 100*.5);
 		
+		rightScaleStartTraj.frankenstein(rightScaleFirstTurnTraj, 100*0.5);
+		rightScaleStartTraj.frankenstein(rightScaleMidTraj, 100*0.5);
+		
 		leftControl = new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV, -0.044, -0.178, leftInches, lDriveOutput, 0.005, "Left.csv", this);
 		rightControl= new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV, 0.044, 0.178, rightInches, rDriveOutput, 0.005,"Right.csv", this);
 		
@@ -464,6 +467,8 @@ public class Robot extends IterativeRobot {
 		fourbarEncoder.reset();
 		elevatorEncoder.reset();
 		
+		leftControl.disable();
+		rightControl.disable();
 		leftControl.reset();
 		rightControl.reset();
 		
@@ -488,8 +493,8 @@ public class Robot extends IterativeRobot {
 	public void autonomousPeriodic() {
 		((Autonomous) autonomousChooser.getSelected()).periodic();
 		
-		SmartDashboard.putNumber("L Encoder", lDriveEncoder.get());
-		SmartDashboard.putNumber("R Encoder", rDriveEncoder.get());
+		SmartDashboard.putNumber("L Encoder", leftInches.pidGet());
+		SmartDashboard.putNumber("R Encoder", rightInches.pidGet());
 	}
 	
 	@Override
@@ -510,15 +515,15 @@ public class Robot extends IterativeRobot {
 			gearLowButton.update(driveStick.getRawButton(leftTrigger));
 			gearHighButton.update(driveStick.getRawButton(leftBumper));
 			intakeOpenButton.update(operatorStick.getRawButton(rightBumper) || driveStick.getRawButton(rightBumper));
-			toggleShiftMode.update(driveStick.getRawButton(12));
+			toggleShiftMode.update(driveStick.getRawButton(10));
 			toggleIntakeDftButton.update(operatorStick.getRawButton(yButton)|| driveStick.getRawButton(yButton));
 			intakeOutButton.update(operatorStick.getRawButton(rightTrigger) || driveStick.getRawButton(rightTrigger));
 			unClampButton.update(operatorStick.getRawButton(bButton));
 			testButton.update(driveStick.getRawButton(1));
-			elbowResetButton.update(driveStick.getRawButton(startButton) || operatorStick.getRawButton(startButton));
+			//elbowResetButton.update(driveStick.getRawButton(startButton) || operatorStick.getRawButton(startButton));
 			elevatorUpButton.update(operatorStick.getRawButton(leftBumper));
 			elevatorDownButton.update(operatorStick.getRawButton(leftTrigger));
-			nannyModeOffButton.update(driveStick.getRawButton(11));
+			nannyModeOffButton.update(driveStick.getRawButton(9)||operatorStick.getRawButton(9));
 		
 			
 			currentTime = Timer.getFPGATimestamp();
@@ -620,7 +625,7 @@ public class Robot extends IterativeRobot {
 			if(getLElbow()>=(lStow - stowFudge) && getRElbow()<=(rStow+stowFudge) && fourbarEncoder.get()<= lowerSafeZoneLimit || fourbarEncoder.get()>= upperSafeZoneLimit) {
 				if(toggleIntakeDftButton.on()) {
 					stowDelay = 0.0;
-					if(intakeOpenButton.held() && !intakeOutButton.held()) {
+					if(intakeOpenButton.held() /*&& !intakeOutButton.held()*/) {
 						rIntakeSetpoint = rOpen;
 						lIntakeSetpoint = lOpen;
 					} else if(!intakeOpenButton.held() && intakeOutButton.held()) {
@@ -633,7 +638,7 @@ public class Robot extends IterativeRobot {
 					}
 					
 				} else if(!toggleIntakeDftButton.on()) {
-					if(intakeOpenButton.held() && !intakeOutButton.held()) {
+					if(intakeOpenButton.held() /* && !intakeOutButton.held()*/) {
 						rIntakeSetpoint = rOpen;
 						lIntakeSetpoint = lOpen;
 						stowDelay = 0.0;
@@ -695,18 +700,23 @@ public class Robot extends IterativeRobot {
 				if(elevatorUpButton.changed()) {
 					elevatorPIDControl.setSetpoint(7800);
 					elevatorUp = true;
-					if(!nannyModeOffButton.on()) {
-						maxPow = 0.5;
-					}else {
-						maxPow = 1.0;
-						
-					}
+					
 				} 
 				if(elevatorDownButton.changed()) {
 					elevatorPIDControl.setSetpoint(0);
 					elevatorUp = false;
-					maxPow = 1.0;
 				}
+			}
+						
+			if(elevatorUp) {
+				if(!nannyModeOffButton.on()) {
+					maxPow = 0.5;
+				}else {
+					maxPow = 1.0;
+					
+				}
+			}else {
+				maxPow = 1.0;
 			}
 			
 						
@@ -774,6 +784,7 @@ public class Robot extends IterativeRobot {
 	public void testInit() {
 		leftControl.disable();
 		rightControl.disable();
+		disableMechanismPIDs();
 	}
 
 	@Override
@@ -786,7 +797,7 @@ public class Robot extends IterativeRobot {
 	
 	public void calibrateNow() {
 		testButton.update(driveStick.getRawButton(1));
-		driveSolenoid.set(lowGear);
+		driveSolenoid.set(highGear);
 		
 		if(testButton.on()){
 			if(testButton.changed()) {
