@@ -214,14 +214,17 @@ public class SwitchAuto extends Autonomous {
 	}
 	
 	public int clampPeriodic() {
-		nextStage();
 		return 0;
 	}
 	
 	public int backUpStart() {
-
-		robot.leftControl.configureGoal(-40, 50, 100);
-		robot.rightControl.configureGoal(-40, 50, 100);
+		robot.rIntakeSetpoint = robot.rClear;
+		robot.rightIntakeControl.setSetpoint(robot.rIntakeSetpoint);
+		robot.lIntakeSetpoint = robot.lClear;
+		robot.leftIntakeControl.setSetpoint(robot.lIntakeSetpoint);
+		
+		robot.leftControl.configureGoal(-8, 50, 100);
+		robot.rightControl.configureGoal(-8, 50, 100);
 		
 		robot.leftControl.enable();
 		robot.rightControl.enable();
