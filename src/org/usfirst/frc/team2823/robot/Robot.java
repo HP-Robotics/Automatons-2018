@@ -149,7 +149,7 @@ public class Robot extends IterativeRobot {
 	final double fourbarLastBit = downStep*8;
 	final double fourbarUpperLimit = 90000;
 	final double fourbarLowerLimit = 0;
-	final double upperSafeZoneLimit = 30000;
+	final double upperSafeZoneLimit = 35000;
 	final double lowerSafeZoneLimit = 1500;
 	
 	SnazzyPIDController elevatorPIDControl;
@@ -172,6 +172,12 @@ public class Robot extends IterativeRobot {
 	final double lowGearP = 0.3+0.4;
 	final double lowGearI = 0.005+0.01;
 	final double lowGearD = 1.0;
+	final double highGMaxV = 140;
+	final double highGMaxA = 90;
+	final double highGMaxJ = 400;
+	final double lowGMaxV = 100*0.5;
+	final double lowGMaxA = 300;
+	final double lowGMaxJ = 300;
 	
 	double maxPow = 1.0;
 	
@@ -189,11 +195,13 @@ public class Robot extends IterativeRobot {
 	
 	TrajectoryPlanner leftScaleStartTraj;
 	TrajectoryPlanner leftScaleEndTraj;
+	TrajectoryPlanner leftScaleBackTraj;
 	
 	TrajectoryPlanner rightScaleStartTraj;
 	TrajectoryPlanner rightScaleFirstTurnTraj;
 	TrajectoryPlanner rightScaleMidTraj;
 	TrajectoryPlanner rightScaleEndTraj;
+	TrajectoryPlanner rightScaleBackTraj;
 
 	
 	TrajectoryPlanner driveForwardTraj;
@@ -213,12 +221,14 @@ public class Robot extends IterativeRobot {
 	double[][] switchGrabCubePlan = {{0,0,0}, {38.5 + 9, 0, 0}};
 	
 	double[][] leftScaleStartPlan = {{0,0,0},{160, 0, 0}};
-	double[][] leftScaleEndPlan = {{160, 0,0},{260 + 12, -10 - 12, -45}};
+	double[][] leftScaleEndPlan = {{160, 0,0},{260 + 14, -10 - 14, -45}};
+	double[][] leftScaleBackPlan = {{220, -(85.25-29.69-10.75), 0},{260 + 14, -10 - 14, -45}};
 	
 	double[][] rightScaleStartPlan = {{0,0,0}, {160 + FASTTOSLOW, 0, 0}};
 	double[][] rightScaleFirstTurnPlan = {{160-SLOWTOFAST, 0,0},{160, 0, 0}, {220, -60,-90}, {220, -60-SLOWTOFAST,-90}};
 	double[][] rightScaleMidPlan = {{220, -60 + FASTTOSLOW, -90},{220, -171- FASTTOSLOW, -90}};
-	double[][] rightScaleEndPlan = {{220, -171, -90}, {260 + 12, -222.74 +12, 45}};	
+	double[][] rightScaleEndPlan = {{220, -171, -90}, {260 + 14, -222.74 +14, 45}};	
+	double[][] rightScaleBackPlan = {{220, -185.31, 0},{260 + 14, -222.74 +14, 45}};
 	
 	double[][] driveForwardPlan = {{0,0,0}, {90, 0, 0}};
 	
@@ -233,7 +243,7 @@ public class Robot extends IterativeRobot {
 	
 	SendableChooser<Autonomous> autonomousChooser;
 	
-	final static double ENC_TO_INCH = Math.PI * 6.0 * (24.0/60.0) * (1.0/3.0) * (1.0/256.0);
+	final static double ENC_TO_INCH = Math.PI * 6.0 * (24.0/60.0) * (1.0/3.0) * (1.0/256.0)*(156.0/160.0);
 	final static double INCH_TO_ENC = 1/ENC_TO_INCH;
 	
 	/*  1 spin of the wheel corresponds to 60/24 spins of the output axle (that's our 3rd stage gearing).
@@ -361,6 +371,7 @@ public class Robot extends IterativeRobot {
 		elevatorEncoder.reset();
 		
 		gyro = new ADXRS450_Gyro();
+		gyro.calibrate();
 		gyro.reset();
 	
 		lDriveOutput = new LeftDrivePIDOutput(this);
@@ -369,51 +380,57 @@ public class Robot extends IterativeRobot {
 		lIntakeOutput = new LeftIntakeOutput(this);
 		rIntakeOutput = new RightIntakeOutput(this);
 		
-		rightSwitchAutoTraj = new TrajectoryPlanner(rightSwitchAutoPlan, 100*0.5, 300, 300, "RSwitchA"); //the integers are what the chassis is capable of, then we limit it with the decimals
+		rightSwitchAutoTraj = new TrajectoryPlanner(rightSwitchAutoPlan, lowGMaxV, lowGMaxA, lowGMaxJ, "RSwitchA"); //the integers are what the chassis is capable of, then we limit it with the decimals
 		rightSwitchAutoTraj.generate();
 		
-		leftSwitchAutoTraj = new TrajectoryPlanner(leftSwitchAutoPlan, 100*0.5, 300, 300,"LSwitchA");
+		leftSwitchAutoTraj = new TrajectoryPlanner(leftSwitchAutoPlan, lowGMaxV, lowGMaxA, lowGMaxJ,"LSwitchA");
 		leftSwitchAutoTraj.generate();
 		
-		leftSwitchBackTraj = new TrajectoryPlanner(leftSwitchBackPlan, 100*0.5, 300, 300, "LSwitchBack");
+		leftSwitchBackTraj = new TrajectoryPlanner(leftSwitchBackPlan, lowGMaxV, lowGMaxA, lowGMaxJ, "LSwitchBack");
 		leftSwitchBackTraj.generate();
 		
-		rightSwitchBackTraj = new TrajectoryPlanner(rightSwitchBackPlan, 100*0.5, 300, 300, "RSwitchBack");
+		rightSwitchBackTraj = new TrajectoryPlanner(rightSwitchBackPlan, lowGMaxV, lowGMaxA, lowGMaxJ, "RSwitchBack");
 		rightSwitchBackTraj.generate();
 		
-		switchGrabCubeTraj = new TrajectoryPlanner(switchGrabCubePlan, 100*0.5, 300, 300, "SwitchGrab");
+		switchGrabCubeTraj = new TrajectoryPlanner(switchGrabCubePlan, lowGMaxV, lowGMaxA, lowGMaxJ, "SwitchGrab");
 		switchGrabCubeTraj.generate();
 		
-		leftScaleStartTraj = new TrajectoryPlanner(leftScaleStartPlan, 140, 600, 600, "LScaleStart");
+		leftScaleStartTraj = new TrajectoryPlanner(leftScaleStartPlan, highGMaxV, highGMaxA, highGMaxJ, "LScaleStart");
 		leftScaleStartTraj.generate();
 		
-		leftScaleEndTraj = new TrajectoryPlanner(leftScaleEndPlan, 100 *0.5, 300, 300, "LScaleEnd");
+		leftScaleEndTraj = new TrajectoryPlanner(leftScaleEndPlan, lowGMaxV, lowGMaxA, lowGMaxJ, "LScaleEnd");
 		leftScaleEndTraj.generate();
 		
-		rightScaleStartTraj = new TrajectoryPlanner(rightScaleStartPlan, 140, 600, 600,"RScaleStart");
+		leftScaleBackTraj = new TrajectoryPlanner(leftScaleBackPlan, lowGMaxV, lowGMaxA, lowGMaxJ, "LScaleBack");
+		leftScaleBackTraj.generate();
+		
+		rightScaleStartTraj = new TrajectoryPlanner(rightScaleStartPlan,  highGMaxV, highGMaxA, highGMaxJ,"RScaleStart");
 		rightScaleStartTraj.generate();
 		
-		rightScaleFirstTurnTraj = new TrajectoryPlanner(rightScaleFirstTurnPlan, 100 *0.5, 300, 300,"RScaleFturn");
+		rightScaleFirstTurnTraj = new TrajectoryPlanner(rightScaleFirstTurnPlan, lowGMaxV, lowGMaxA, lowGMaxJ,"RScaleFturn");
 		rightScaleFirstTurnTraj.generate();
 		
-		rightScaleMidTraj = new TrajectoryPlanner(rightScaleMidPlan, 140, 600, 600, "RScaleMid");
+		rightScaleMidTraj = new TrajectoryPlanner(rightScaleMidPlan, highGMaxV, highGMaxA, highGMaxJ, "RScaleMid");
 		rightScaleMidTraj.generate();
 		
-		rightScaleEndTraj = new TrajectoryPlanner(rightScaleEndPlan, 100*0.5, 300, 300, "RScaleEnd");
+		rightScaleEndTraj = new TrajectoryPlanner(rightScaleEndPlan, lowGMaxV, lowGMaxA, lowGMaxJ, "RScaleEnd");
 		rightScaleEndTraj.generate();
 		
-		driveForwardTraj = new TrajectoryPlanner(driveForwardPlan, 100*.5, 300, 300, "DriveForward");
+		rightScaleBackTraj= new TrajectoryPlanner(rightScaleBackPlan, lowGMaxV, lowGMaxA, lowGMaxJ, "RScaleBack");
+		rightScaleBackTraj.generate();
+		
+		driveForwardTraj = new TrajectoryPlanner(driveForwardPlan, lowGMaxV, lowGMaxA, lowGMaxJ, "DriveForward");
 		driveForwardTraj.generate();
 		
-		racetrackStartTraj = new TrajectoryPlanner(racetrackStartPlan, 140, 600, 600, "RacetrackStart");
+		racetrackStartTraj = new TrajectoryPlanner(racetrackStartPlan,  highGMaxV, highGMaxA, highGMaxJ, "RacetrackStart");
 		racetrackStartTraj.generate();
-		racetrackTurnTraj = new TrajectoryPlanner(racetrackTurnPlan, 100*.5, 300, 300, "RacetrackTurn");
+		racetrackTurnTraj = new TrajectoryPlanner(racetrackTurnPlan,lowGMaxV, lowGMaxA, lowGMaxJ, "RacetrackTurn");
 		racetrackTurnTraj.generate();
 		
 		racetrackStartTraj.frankenstein(racetrackTurnTraj, 100*.5);
 		
 		rightScaleStartTraj.frankenstein(rightScaleFirstTurnTraj, 100*0.5);
-		rightScaleStartTraj.frankenstein(rightScaleMidTraj, 100*0.5);
+		//rightScaleStartTraj.frankenstein(rightScaleMidTraj, 100*0.5);
 		
 		leftControl = new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV, -0.044, -0.178, leftInches, lDriveOutput, 0.005, "Left.csv", this);
 		rightControl= new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV, 0.044, 0.178, rightInches, rDriveOutput, 0.005,"Right.csv", this);

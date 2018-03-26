@@ -1,10 +1,9 @@
-- Nanny Mode Button if Elevator is up and option to turn off
 - Flesh out scale auto?
 - Tune high gear PID
 - 45 degree pov for fourbar up/down
 - camera fps < 15 work too?
 - Update to wpilib 18.3?  (The one that fixes network tables)
--Do spinny swivel motion
+-Do spinny swivel motion- [CALIBRATE]
 - Test switch auto- (hopefully it breaks on left)
 -Back up at end of switch auto
 -Raise low safe point
@@ -13,6 +12,5 @@
 -180 spinny move at end of scale
 -Frakenstein right scale auto
 -Check for windows updates after 10k
--Weird auto stuff????
 -Don't allow the fourbar to go up with clamp open?
 -Allow the fourbar to go up when it is up but the set point is low

@@ -28,9 +28,7 @@ public class ScaleAuto extends Autonomous {
 		String gameData;
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		
-		//robot.fourbarPIDControl.setSetpoint(90000);
-		//robot.fourbarPIDControl.enable();
-		
+				
 		if(gameData.length() > 0)
 		{
 			if(gameData.charAt(1) == 'L')
@@ -61,7 +59,6 @@ public class ScaleAuto extends Autonomous {
 	}
 	
 	public int elevatorUpStart() {
-		stopAll();
 		String gameData;
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		robot.configureToGear(robot.lowGear);
@@ -74,6 +71,9 @@ public class ScaleAuto extends Autonomous {
 		
 		robot.elevatorPIDControl.setSetpoint(7800);
 		robot.elevatorPIDControl.enable();
+		robot.fourbarPIDControl.setSetpoint(90000);
+		robot.fourbarPIDControl.enable();
+
 		return 0;
 	}
 	public int elevatorUpPeriodic() {
@@ -131,8 +131,22 @@ public class ScaleAuto extends Autonomous {
 	
 	public int backUpStart() {
 
-		robot.leftControl.configureGoal(-40, 50, 100);
-		robot.rightControl.configureGoal(-40, 50, 100);
+		String gameData;
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		
+
+		if(gameData.length() > 0)
+		{
+			if(gameData.charAt(1) == 'L')
+			{
+				robot.leftControl.configureTrajectory(robot.leftScaleBackTraj.getInvertedLeftTrajectory(), false);
+				robot.rightControl.configureTrajectory(robot.leftScaleBackTraj.getInvertedRightTrajectory(), false);
+			}
+			else {
+				robot.leftControl.configureTrajectory(robot.rightScaleBackTraj.getInvertedLeftTrajectory(), false);
+				robot.rightControl.configureTrajectory(robot.rightScaleBackTraj.getInvertedRightTrajectory(), false);
+			}
+		}
 		
 		robot.leftControl.enable();
 		robot.rightControl.enable();
@@ -145,7 +159,7 @@ public class ScaleAuto extends Autonomous {
 		if(timer.get() >0 && timer.get()<0.5) {
 			robot.rIntakeSetpoint = robot.rClear;
 			robot.rightIntakeControl.setSetpoint(robot.rIntakeSetpoint);
-			robot.clamper.set(robot.clampIt);
+			
 		}
 		if(timer.get()>0.5 && timer.get()<1.0) {
 			robot.lIntakeSetpoint = robot.lClear;
@@ -162,6 +176,7 @@ public class ScaleAuto extends Autonomous {
 	}
 
 	public int bringDownStart() {
+		robot.clamper.set(robot.clampIt);
 		robot.fourbarSetpoint = robot.upperSafeZoneLimit;
 		robot.fourbarPIDControl.setSetpoint(robot.fourbarSetpoint);
 		robot.elevatorPIDControl.setSetpoint(0);
