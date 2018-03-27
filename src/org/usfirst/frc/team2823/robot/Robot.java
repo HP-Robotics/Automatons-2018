@@ -226,7 +226,7 @@ public class Robot extends IterativeRobot {
 	
 	double[][] rightScaleStartPlan = {{0,0,0}, {160 + FASTTOSLOW, 0, 0}};
 	double[][] rightScaleFirstTurnPlan = {{160-SLOWTOFAST, 0,0},{160, 0, 0}, {220, -60,-90}, {220, -60-SLOWTOFAST,-90}};
-	double[][] rightScaleMidPlan = {{220, -60 + FASTTOSLOW, -90},{220, -171- FASTTOSLOW, -90}};
+	double[][] rightScaleMidPlan = {{220, -60 + FASTTOSLOW, -90},{220, -171- FASTTOSLOW -55.0 /* TODO TEST mura fudge*/, -90}};
 	double[][] rightScaleEndPlan = {{220, -171, -90}, {260 + 14, -222.74 +14, 45}};	
 	double[][] rightScaleBackPlan = {{220, -185.31, 0},{260 + 14, -222.74 +14, 45}};
 	
@@ -430,7 +430,7 @@ public class Robot extends IterativeRobot {
 		racetrackStartTraj.frankenstein(racetrackTurnTraj, 100*.5);
 		
 		rightScaleStartTraj.frankenstein(rightScaleFirstTurnTraj, 100*0.5);
-		//rightScaleStartTraj.frankenstein(rightScaleMidTraj, 100*0.5);
+		rightScaleStartTraj.frankenstein(rightScaleMidTraj, 100*0.5);
 		
 		leftControl = new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV, -0.044, -0.178, leftInches, lDriveOutput, 0.005, "Left.csv", this);
 		rightControl= new SnazzyMotionPlanner(lowGearP, lowGearI, lowGearD, 0, lowGearKA, lowGearKV, 0.044, 0.178, rightInches, rDriveOutput, 0.005,"Right.csv", this);

@@ -12,6 +12,7 @@ public class ScaleAuto extends Autonomous {
 	public void init() {
 		BlueprintStep[] blueprints = new BlueprintStep[] {
 		new BlueprintStep(15.0, this::goStart, this::goPeriodic),
+		new BlueprintStep(5.0, this::spinnyStart, this::spinnyPeriodic),
 		new BlueprintStep(3.0, this::elevatorUpStart, this::elevatorUpPeriodic),
 		new BlueprintStep(15.0, this::endMoveStart, this::endMovePeriodic),
 		new BlueprintStep(2.0, this::unclampStart, this::unclampPeriodic),
@@ -58,6 +59,41 @@ public class ScaleAuto extends Autonomous {
 		return 0;
 	}
 	
+	public int spinnyStart() {
+		String gameData;
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		
+
+		if(gameData.length() > 0)
+		{
+			if(gameData.charAt(1) == 'L')
+			{
+				nextStage();
+			}
+			else {
+				//robot.leftControl.configureTrajectory(robot.rightScaleEndTraj.getLeftTrajectory(), false);
+				//robot.rightControl.configureTrajectory(robot.rightScaleEndTraj.getRightTrajectory(), false);
+				robot.leftControl.configureGoal(-135 * (38.0/160), 50, 50, false);
+				robot.rightControl.configureGoal(135* (38.0/160), 50, 50, false);
+			}
+		}
+
+		robot.leftControl.enable();
+		robot.rightControl.enable();
+		return 0;
+	}
+	
+	public int spinnyPeriodic() {
+		if(robot.leftControl.isPlanFinished()&&robot.rightControl.isPlanFinished()) {
+			
+			robot.leftControl.reset();
+			robot.rightControl.reset();
+				
+			nextStage();
+		}
+		return 0;
+	}
+	
 	public int elevatorUpStart() {
 		String gameData;
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
@@ -93,8 +129,10 @@ public class ScaleAuto extends Autonomous {
 				robot.rightControl.configureTrajectory(robot.leftScaleEndTraj.getRightTrajectory(), false);
 			}
 			else {
-				robot.leftControl.configureTrajectory(robot.rightScaleEndTraj.getLeftTrajectory(), false);
-				robot.rightControl.configureTrajectory(robot.rightScaleEndTraj.getRightTrajectory(), false);
+				//robot.leftControl.configureTrajectory(robot.rightScaleEndTraj.getLeftTrajectory(), false);
+				//robot.rightControl.configureTrajectory(robot.rightScaleEndTraj.getRightTrajectory(), false);
+				robot.leftControl.configureGoal(40, 50, 50, false);
+				robot.rightControl.configureGoal(40, 50, 50, false);
 			}
 		}
 
@@ -139,12 +177,18 @@ public class ScaleAuto extends Autonomous {
 		{
 			if(gameData.charAt(1) == 'L')
 			{
-				robot.leftControl.configureTrajectory(robot.leftScaleBackTraj.getInvertedLeftTrajectory(), false);
-				robot.rightControl.configureTrajectory(robot.leftScaleBackTraj.getInvertedRightTrajectory(), false);
+				//robot.leftControl.configureTrajectory(robot.leftScaleBackTraj.getInvertedLeftTrajectory(), false);
+				//robot.rightControl.configureTrajectory(robot.leftScaleBackTraj.getInvertedRightTrajectory(), false);
+
+				robot.leftControl.configureGoal(-40, 50, 100);
+				robot.rightControl.configureGoal(-40, 50, 100);
 			}
 			else {
-				robot.leftControl.configureTrajectory(robot.rightScaleBackTraj.getInvertedLeftTrajectory(), false);
-				robot.rightControl.configureTrajectory(robot.rightScaleBackTraj.getInvertedRightTrajectory(), false);
+				//robot.leftControl.configureTrajectory(robot.rightScaleBackTraj.getInvertedLeftTrajectory(), false);
+				//robot.rightControl.configureTrajectory(robot.rightScaleBackTraj.getInvertedRightTrajectory(), false);
+
+				robot.leftControl.configureGoal(-40, 50, 100);
+				robot.rightControl.configureGoal(-40, 50, 100);
 			}
 		}
 		

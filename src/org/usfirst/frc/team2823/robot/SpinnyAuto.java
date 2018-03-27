@@ -15,8 +15,8 @@ public class SpinnyAuto extends Autonomous {
 	}
 	
 	public int spinStart() {
-		robot.leftControl.configureGoal(90, 300, 300, false);
-		robot.rightControl.configureGoal(-90, 300, 300, false);
+		robot.leftControl.configureGoal(90 * (38.0/160), 50, 50, false);
+		robot.rightControl.configureGoal(-90* (38.0/160), 50, 50, false);
 			
 		robot.leftControl.enable();
 		robot.rightControl.enable();
